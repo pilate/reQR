@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF8">
+        <title>QR Assistant</title>
+        <script src="d3.js"></script>
+        <script src="assist.js"></script>
+    </head>
+    <body onload="init()">
+        <svg width="610" height="610" id="svg"></svg>
+        <p>Encoding: <span id="qrenc"></span></p>
+        <p>Length: <span id="qrlen"></span></p>
+        <p>Text: <span id="qrbytes"></span></p>
+        <br>
+        <button id="mask000" style="float:left;">Mask 000</button>
+        <button id="mask001" style="float:left;">Mask 001</button>
+        <button id="mask010" style="float:left;">Mask 010</button>
+        <button id="mask011" style="float:left;">Mask 011</button>
+        <button id="mask100" style="float:left;">Mask 100</button>
+        <button id="mask101" style="float:left;">Mask 101</button>
+        <button id="mask110" style="float:left;">Mask 110</button>
+        <button id="mask111" style="float:left;">Mask 111</button>
+        <br><br>
+        <button id="testread" style="float:left;">read8</button>
+    </body>
+</html>
