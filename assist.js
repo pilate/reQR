@@ -58,16 +58,16 @@ var VERSIONS = {
         }
     }
 }
-var MASKS = {
-    0: function (row, col) { if (((row + col) % 2) == 0) { return true; } },
-    1: function (row, col) { if ((row  % 2) == 0) { return true; } },
-    2: function (row, col) { if ((col  % 3) == 0) { return true; } },
-    3: function (row, col) { if (((row + col) % 3) == 0) { return true; } },
-    4: function (row, col) { if (((Math.floor(row/2) + Math.floor(col/3)) % 2) == 0) { return true; }  },
-    5: function (row, col) { if (((row * col) % 2 + (row * col) % 3) == 0) { return true; } },
-    6: function (row, col) { if ((((row * col) % 3 + row * col) % 2) == 0) { return true; } },
-    7: function (row, col) { if ((((row * col) % 3 + row + col) % 2) == 0) { return true; } },
-}
+var MASKS = [
+    function (row, col) { if (((row + col) % 2) == 0) { return true; } },
+    function (row, col) { if ((row  % 2) == 0) { return true; } },
+    function (row, col) { if ((col  % 3) == 0) { return true; } },
+    function (row, col) { if (((row + col) % 3) == 0) { return true; } },
+    function (row, col) { if (((Math.floor(row/2) + Math.floor(col/3)) % 2) == 0) { return true; }  },
+    function (row, col) { if (((row * col) % 2 + (row * col) % 3) == 0) { return true; } },
+    function (row, col) { if ((((row * col) % 3 + row * col) % 2) == 0) { return true; } },
+    function (row, col) { if ((((row * col) % 3 + row + col) % 2) == 0) { return true; } },
+]
 var TYPEBITS_MAP = {
     597: { "ecc_level": "H", "mask": 5 },
     1890: { "ecc_level": "H", "mask": 4 },
@@ -469,31 +469,25 @@ QRAssistController.prototype.writeBits = function (bit_string) {
 function init () {
     var svg = d3.select("svg");
     qr = new QRAssist(svg, 3);
-    document.getElementById("mask000").addEventListener("click", function () {
-        qr.applyMask(MASKS[0]);
-    });
-    document.getElementById("mask001").addEventListener("click", function () {
-        qr.applyMask(MASKS[1]);
-    });
-    document.getElementById("mask010").addEventListener("click", function () {
-        qr.applyMask(MASKS[2]);
-    });
-    document.getElementById("mask011").addEventListener("click", function () {
-        qr.applyMask(MASKS[3]);
-    });
-    document.getElementById("mask100").addEventListener("click", function () {
-        qr.applyMask(MASKS[4]);
-    });
-    document.getElementById("mask101").addEventListener("click", function () {
-        qr.applyMask(MASKS[5]);
-    });
-    document.getElementById("mask110").addEventListener("click", function () {
-        qr.applyMask(MASKS[6]);
-    });
-    document.getElementById("mask111").addEventListener("click", function () {
-        qr.applyMask(MASKS[7]);
-    });
 
+    var mask_keys = 1;
+
+    for (var i=0; i < MASKS.length; i++) {
+        console.log("???")
+        var mask_el = document.createElement("button");
+        var label = "mask"+i;
+        mask_el.style.float = "left";
+        mask_el.setAttribute("id", label);
+        mask_el.addEventListener("click", 
+            (function (mask) {
+                return function () {
+                    qr.applyMask(MASKS[mask]);
+                }                
+            })(i)
+        );
+        mask_el.innerHTML = label;
+        document.body.appendChild(mask_el);
+    }
     
     setTimeout(function () {
         r = new QRAssistController(qr);   
