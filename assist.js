@@ -11,9 +11,10 @@ var ENCODINGS = {
     7: "extended channel",
     8: "kanji",
     9: "fnc1 in second"
-}
-ALPHA = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:'
-// Pattern of finder codes
+};
+var ALPHA = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
+
+// Finder code square
 var FINDER = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0],
     [0, 1, 1, 1, 1, 1, 1, 1, 0],
@@ -25,7 +26,9 @@ var FINDER = [
     [0, 1, 1, 1, 1, 1, 1, 1, 0],
     [0, 0, 0, 0, 0, 0, 0, 0, 0],
 ];
-FINDER_LEN = 9;
+var FINDER_LEN = 9;
+
+// Alignment square
 var ALIGNMENT = [
     [1, 1, 1, 1, 1],
     [1, 0, 0, 0, 1],
@@ -34,6 +37,7 @@ var ALIGNMENT = [
     [1, 1, 1, 1, 1],
 ];
 var IGNORE_LABELS = ["dark", "timing", "finder", "alignment", "format"];
+
 var VERSIONS = {
     2: {
         "size": 25,
@@ -57,17 +61,19 @@ var VERSIONS = {
             8: 8
         }
     }
-}
+};
+
 var MASKS = [
-    function (row, col) { if (((row + col) % 2) == 0) { return true; } },
-    function (row, col) { if ((row  % 2) == 0) { return true; } },
-    function (row, col) { if ((col  % 3) == 0) { return true; } },
-    function (row, col) { if (((row + col) % 3) == 0) { return true; } },
-    function (row, col) { if (((Math.floor(row/2) + Math.floor(col/3)) % 2) == 0) { return true; }  },
-    function (row, col) { if (((row * col) % 2 + (row * col) % 3) == 0) { return true; } },
-    function (row, col) { if ((((row * col) % 3 + row * col) % 2) == 0) { return true; } },
-    function (row, col) { if ((((row * col) % 3 + row + col) % 2) == 0) { return true; } },
-]
+    function (row, col) { if (((row + col) % 2) === 0) { return true; } },
+    function (row, col) { if ((row  % 2) === 0) { return true; } },
+    function (row, col) { if ((col  % 3) === 0) { return true; } },
+    function (row, col) { if (((row + col) % 3) === 0) { return true; } },
+    function (row, col) { if (((Math.floor(row/2) + Math.floor(col/3)) % 2) === 0) { return true; }  },
+    function (row, col) { if (((row * col) % 2 + (row * col) % 3) === 0) { return true; } },
+    function (row, col) { if ((((row * col) % 3 + row * col) % 2) === 0) { return true; } },
+    function (row, col) { if ((((row * col) % 3 + row + col) % 2) === 0) { return true; } },
+];
+
 var TYPEBITS_MAP = {
     597: { "ecc_level": "H", "mask": 5 },
     1890: { "ecc_level": "H", "mask": 4 },
@@ -101,12 +107,7 @@ var TYPEBITS_MAP = {
     30660: { "ecc_level": "L", "mask": 0 },
     30877: { "ecc_level": "L", "mask": 3 },
     32170: { "ecc_level": "L", "mask": 2 },
-}
-
-// QR Version 2    6   18
-// QR Version 3    6   22
-// QR Version 4    6   26
-// QR Version 5    6   30
+};
 
 function QRAssist (svg, version) {
     this.svg = svg;
@@ -128,8 +129,8 @@ QRAssist.prototype.setup = function () {
         this.format_nodes[i] = [];
     }
     this.offset_map = new Array(this.size);
-    for (var i=0; i < this.offset_map.length; i++) {
-        this.offset_map[i] = [];
+    for (var j=0; j < this.offset_map.length; j++) {
+        this.offset_map[j] = [];
     }
     this.data = this.getData();
     this.addRects();
@@ -180,7 +181,7 @@ QRAssist.prototype.addRects = function() {
         })
         .each(function (d) {
             that.offset_map[d.row][d.col] = this;
-        })
+        });
 };
 
 QRAssist.prototype.mark = function (node, d, color, label) {
@@ -283,8 +284,6 @@ QRAssist.prototype.applyMask = function (mask) {
 
 QRAssist.prototype.drawFormatInfo = function () {
     var that = this;
-    var h_skip_1 = 0;
-    var h_skip_2 = 0;
     this.svg.selectAll("rect").each(function (d) {
         if ((d.row == 8) && (d.col == 0)) { d.format_cell = 14; }
         if ((d.row == 8) && (d.col == 1)) { d.format_cell = 13; }
@@ -345,13 +344,11 @@ function QRAssistController (QRA, start_row, start_col) {
     this.write_direction = "up";
 }
 
-QRAssistController.prototype.readBits = function (count, color) {
-    var that = this;
-    var val;
+QRAssistController.prototype.readBits = function (count) {
+    // var that = this;
     var bits = [];
 
-    var color = "#" + pad(Math.floor(Math.random() * 16777214).toString(16), 6);
-    console.log(color);
+    // var color = "#" + pad(Math.floor(Math.random() * 16777214).toString(16), 6);
     while (true) {
         var node;
         // Every other row, check col-1 for the value
@@ -378,7 +375,7 @@ QRAssistController.prototype.readBits = function (count, color) {
             else if (this.read_direction == "down") {
                 if (this.read_row == (this.qr.size - 1)) {
                     this.read_direction = "up";
-                    this.read_col -= 2
+                    this.read_col -= 2;
                 }
                 else {
                     this.read_row += 1;
@@ -393,7 +390,7 @@ QRAssistController.prototype.readBits = function (count, color) {
 
         d3.select(node).each(function (d) {
             if (IGNORE_LABELS.indexOf(d.label) === -1) {
-                that.qr.mark(this, d, color)
+                // that.qr.mark(this, d, color)
                 var node_val = d.val;
                 bits.push(node_val);
             }
@@ -403,18 +400,18 @@ QRAssistController.prototype.readBits = function (count, color) {
             return bits.join("");
         }
     }
-}
+};
 
 QRAssistController.prototype.writeBits = function (bit_string) {
-    var val;
+    var that = this;
     var bits = bit_string.split("");
 
     while (true) {
-        var that = this;
         var node;
+
         // Every other row, check col-1 for the value
         if (this.write_col < 0) {
-            return bits.join("");
+            return;
         }
 
         if (this.write_prev_col) {
@@ -436,7 +433,7 @@ QRAssistController.prototype.writeBits = function (bit_string) {
             else if (this.write_direction == "down") {
                 if (this.write_row == (this.qr.size - 1)) {
                     this.write_direction = "up";
-                    this.write_col -= 2
+                    this.write_col -= 2;
                 }
                 else {
                     this.write_row += 1;
@@ -464,16 +461,13 @@ QRAssistController.prototype.writeBits = function (bit_string) {
             break;
         }
     }
-}
+};
 
 function init () {
     var svg = d3.select("svg");
     qr = new QRAssist(svg, 3);
 
-    var mask_keys = 1;
-
     for (var i=0; i < MASKS.length; i++) {
-        console.log("???")
         var mask_el = document.createElement("button");
         var label = "mask"+i;
         mask_el.style.float = "left";
@@ -482,7 +476,7 @@ function init () {
             (function (mask) {
                 return function () {
                     qr.applyMask(MASKS[mask]);
-                }                
+                };              
             })(i)
         );
         mask_el.innerHTML = label;
@@ -503,8 +497,8 @@ function init () {
         for (var i=0; i < blocks.length; i+= 2) {
             ordered_blocks.push(blocks[i]);
         }
-        for (var i=1; i < blocks.length; i+= 2) {
-            ordered_blocks.push(blocks[i]);
+        for (var j=1; j < blocks.length; j+= 2) {
+            ordered_blocks.push(blocks[j]);
         }
         var ordered_bits = ordered_blocks.join("");
         console.log(ordered_bits);
@@ -535,8 +529,8 @@ function init () {
                 break;
             }
             if (encoding == 2) {
-                var str = []
-                for (var i=0; i < length / 2; i++) {
+                var str = [];
+                for (var k=0; k < length / 2; k++) {
                     var bits = parseInt(ordered_bits.substr(offset, 11), 2);
                     offset += 11;
                     str.push(ALPHA[Math.floor(bits / 45)]);
@@ -545,11 +539,11 @@ function init () {
                 data.push(str);
             }
             if (encoding == 4) {
-                var str = []
-                for (var i=0; i < length; i++) {
+                var str = [];
+                for (var l=0; l < length; l++) {
                     var bits = parseInt(ordered_bits.substr(offset, 8), 2);
                     offset += 8;
-                    str.push(String.fromCharCode(bits))
+                    str.push(String.fromCharCode(bits));
                 }
                 data.push(str);
             }
@@ -558,9 +552,8 @@ function init () {
             document.getElementById("qrbytes").innerHTML = data.join("");
 
             if (data.length > 1) {
-                break
+                break;
             }
-            // break;
         }
     }, 5000);
     if (document.location.hash) {
@@ -569,17 +562,4 @@ function init () {
         var data = atob(hash);
         r.writeBits(data);
     }
-    document.getElementById("testread").addEventListener("click", function () {
-
-    });
 }
-
-
-// 10011001100
-// 00110011001
-// 10011110011
-
-
-// 10011111010 SE
-// 01000101000 CC
-// 10001001111 ON
