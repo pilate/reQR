@@ -59,6 +59,12 @@ var VERSIONS = {
             2: 9,
             4: 8,
             8: 8
+        },
+        "ec_table": {
+            "L": { "ec_per_block": 15, "groups": 1, "group_blocks": 1, "codewords_in_group": 55 },
+            "M": { "ec_per_block": 26, "groups": 1, "group_blocks": 1, "codewords_in_group": 44 },
+            "Q": { "ec_per_block": 18, "groups": 1, "group_blocks": 2, "codewords_in_group": 17 },
+            "H": { "ec_per_block": 22, "groups": 1, "group_blocks": 2, "codewords_in_group": 13 },
         }
     }
 };
@@ -109,9 +115,10 @@ var TYPEBITS_MAP = {
     32170: { "ecc_level": "L", "mask": 2 },
 };
 
-function QRAssist (svg, version) {
+function QRAssist (svg, version, ec) {
     this.svg = svg;
     this.version = VERSIONS[version];
+    this.ec = ec;
     this.size = this.version.size;
     this.block_size = 20;
     this.spacing = 1;
@@ -300,7 +307,7 @@ QRAssist.prototype.drawFormatInfo = function () {
         if ((d.col == 8) && (d.row == 2)) { d.format_cell = 2; }
         if ((d.col == 8) && (d.row == 1)) { d.format_cell = 1; }
         if ((d.col == 8) && (d.row == 0)) { d.format_cell = 0; }
-        
+
         if ((d.col == 8) && (d.row == that.size - 1)) { d.format_cell = 14; }
         if ((d.col == 8) && (d.row == that.size - 2)) { d.format_cell = 13; }
         if ((d.col == 8) && (d.row == that.size - 3)) { d.format_cell = 12; }
@@ -462,29 +469,94 @@ QRAssistController.prototype.writeBits = function (bit_string) {
         }
     }
 };
+/*
+ ---------- ---------- ----------
+|          |          |  Code 1  |
+|          |          |  Code 2  |
+|          | Block 1  |  Code 3  |
+|          |          |  Code 4  |
+|          |          |  Code 5  |
+| Group 1  |----------|----------|
+|          |          |  Code 6  |
+|          |          |  Code 7  |
+|          | Block 2  |  Code 8  |
+|          |          |  Code 9  |
+|          |          |  Code 10 |
+ ---------- ---------- ----------
+|          |          |  Code 11 |
+|          |          |  Code 12 |
+|          | Block 1  |  Code 13 |
+|          |          |  Code 14 |
+|          |          |  Code 15 |
+| Group 2  |----------|----------|
+|          |          |  Code 16 |
+|          |          |  Code 17 |
+|          | Block 2  |  Code 18 |
+|          |          |  Code 19 |
+|          |          |  Code 20 |
+ ---------- ---------- ----------
+
+ The blocks are interleaved by doing the following:
+
+    take the first data codeword from the first block
+    followed by the first data codeword from the second block
+    followed by the first data codeword from the third block
+    followed by the first data codeword from the fourth block
+    followed by the second data codeword from the first block
+    and so on
+
+    So:
+        Determine number of data blocks, d
+        Determine number of blocks, n
+        Create array of n arrays, a
+        Iterate over d blocks, sending them to a[i%n]
+
+
+
+*/
+
+// "H": { "ec_per_block": 22, "groups": 1, "group_blocks": 2, "codewords_in_group": 13 },
+function reorder_codewords(qr, codewords) {
+    var ec_data = qr.version.ec_table[qr.ec];
+    
+    // Create an array for un-interpolating
+    var blocked_codewords = [];
+    for (var i=0; i < ec_data.groups * ec_data.group_blocks; i++) {
+        blocked_codewords[i] = [];
+    }
+
+    var data_codes = ec_data.groups * ec_data.group_blocks * ec_data.codewords_in_group;
+    for (var j=0; j < data_codes; j++) {
+        blocked_codewords[j % blocked_codewords.length].push(codewords[j]);
+    }
+
+    return blocked_codewords.map(function (val) {
+        return val.join("");
+    });
+}
 
 function init () {
     var svg = d3.select("svg");
-    qr = new QRAssist(svg, 3);
+    qr = new QRAssist(svg, 3, "H");
 
     for (var i=0; i < MASKS.length; i++) {
         var mask_el = document.createElement("button");
         var label = "mask"+i;
         mask_el.style.float = "left";
         mask_el.setAttribute("id", label);
-        mask_el.addEventListener("click", 
+        mask_el.addEventListener("click",
             (function (mask) {
                 return function () {
                     qr.applyMask(MASKS[mask]);
-                };              
+                };
             })(i)
         );
         mask_el.innerHTML = label;
         document.body.appendChild(mask_el);
     }
-    
+
     setTimeout(function () {
-        r = new QRAssistController(qr);   
+        r = new QRAssistController(qr);
         var blocks = [];
         while (true) {
             var block = r.readBits(8);
@@ -493,15 +565,8 @@ function init () {
             }
             blocks.push(block);
         }
-        var ordered_blocks = [];
-        for (var i=0; i < blocks.length; i+= 2) {
-            ordered_blocks.push(blocks[i]);
-        }
-        for (var j=1; j < blocks.length; j+= 2) {
-            ordered_blocks.push(blocks[j]);
-        }
-        var ordered_bits = ordered_blocks.join("");
-        console.log(ordered_bits);
+        var ordered_codes = reorder_codewords(qr, blocks);
+        var ordered_bits = ordered_codes.join("");
         var joined_blocks = blocks.join("");
         try {
         var match = /^([01]+?)0+$/.exec(joined_blocks)[1];
@@ -543,21 +608,22 @@ function init () {
                 for (var l=0; l < length; l++) {
                     var bits = parseInt(ordered_bits.substr(offset, 8), 2);
                     offset += 8;
-                    str.push(String.fromCharCode(bits));
+                    var ccc = String.fromCharCode(bits);
+                    str.push(ccc);
                 }
                 data.push(str);
             }
-            document.getElementById("qrenc").innerHTML = ENCODINGS[encoding];
-            document.getElementById("qrlen").innerHTML = length;
-            document.getElementById("qrbytes").innerHTML = data.join("");
+            document.getElementById("qrbytes").innerHTML = data.map(function (val) {
+                return val.join("");
+            }).join("");
 
             if (data.length > 1) {
                 break;
             }
         }
-    }, 5000);
+    }, 100);
     if (document.location.hash) {
-        r = new QRAssistController(qr);   
+        r = new QRAssistController(qr);
         var hash = document.location.hash.substr(1);
         var data = atob(hash);
         r.writeBits(data);

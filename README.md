@@ -9,7 +9,7 @@ Attempting to create a QR utility that could be useful for future CTFs.
   * Draws position, alignment, and timing markers
   * Prevents user from changing 'static' features
 * Configurable QR versions
-* Apply and remove masks
+* Apply masks
 * Controller object for reading/writing bits in the correct order 
 * Use URL hash to pass in bit strings. Bits are written to the QR code after creation
 
