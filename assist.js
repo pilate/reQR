@@ -118,6 +118,7 @@ var TYPEBITS_MAP = {
 function QRAssist (svg, version, ec) {
     this.svg = svg;
     this.version = VERSIONS[version];
+    this.version_num = version;
     this.ec = ec;
     this.size = this.version.size;
     this.block_size = 20;
@@ -135,6 +136,7 @@ QRAssist.prototype.setup = function () {
     for (var i=0; i < this.format_nodes.length; i++) {
         this.format_nodes[i] = [];
     }
+    // Create array for row->col->node lookups
     this.offset_map = new Array(this.size);
     for (var j=0; j < this.offset_map.length; j++) {
         this.offset_map[j] = [];
@@ -148,6 +150,7 @@ QRAssist.prototype.setup = function () {
     this.drawFormatInfo();
 };
 
+// Creates the base data for d3, makes size*size elements with defined coordinates
 QRAssist.prototype.getData = function () {
     var cell_data = [];
     for (var i=0; i < this.size; i++) {
@@ -162,6 +165,7 @@ QRAssist.prototype.getData = function () {
     return cell_data;
 };
 
+// Sets up the clean grid of squares
 QRAssist.prototype.addRects = function() {
     var that = this;
     this.svg
@@ -172,42 +176,49 @@ QRAssist.prototype.addRects = function() {
         .attr("y", function(d) { return d.row * that.block_spacing + 1; })
         .attr("width", this.block_size)
         .attr("height", this.block_size)
+        // Left click to turn node on
         .on("click", function (d) {
             if (IGNORE_LABELS.indexOf(d.label) !== -1) {
                 return;
             }
-            that.mark(this, d, BLACK);
+            that.mark(this, BLACK);
         })
+        // Right click to turn node off
         .on("contextmenu", function (d) {
             if (IGNORE_LABELS.indexOf(d.label) !== -1) {
                 d3.event.preventDefault();
                 return;
             }
-            that.mark(this, d, WHITE);
+            that.mark(this, WHITE);
             d3.event.preventDefault();
         })
+        // Populate row->col->node mapping
         .each(function (d) {
             that.offset_map[d.row][d.col] = this;
         });
 };
 
-QRAssist.prototype.mark = function (node, d, color, label) {
-    var dnode = d3.select(node);
-    dnode.style("fill", color);
-    d.val = color == WHITE ? 0 : 1;
-    // Add label if possible
-    if (label && (!d.label)) {
-        dnode.attr("class", label);
-        d.label = label;
+// Changes the status/color of a node, adds a label if provided
+QRAssist.prototype.mark = function (node, color, label) {
+    var d3_node = d3.select(node);
+    var data = d3_node.data()[0];
+    d3_node.style("fill", color);
+    data.val = color == WHITE ? 0 : 1;
+
+    if (label && (!data.label)) {
+        d3_node.attr("class", label);
+        data.label = label;
     }
 };
 
+// Takes a pattern of bits and draws them at the provided offset
 QRAssist.prototype.drawPixels = function (pattern, offset, label) {
     var that = this;
     this.svg.selectAll("rect").each(function (d) {
-        // Subtract offset from current rect
+        // Subtract offset from current node
         var new_row = d.row - offset[0];
         var new_col = d.col - offset[1];
+
         // Check if our current offset exists in the pattern
         var val;
         try {
@@ -221,53 +232,56 @@ QRAssist.prototype.drawPixels = function (pattern, offset, label) {
             return;
         }
         var fill_color = val ? BLACK : WHITE;
-        that.mark(this, d, fill_color, label);
+        that.mark(this, fill_color, label);
     });
 };
 
+// Draws the finder patterns in three corners
 QRAssist.prototype.drawFinders = function () {
-    // Top left, top right, bottom left
     this.drawPixels(FINDER, [-1, -1], "finder");
     this.drawPixels(FINDER, [-1, this.size - FINDER_LEN + 1], "finder");
     this.drawPixels(FINDER, [this.size - FINDER_LEN + 1, -1], "finder");
 };
 
+// Draw the horizontal and vertical timing markers
+// These are placed between the inner corners of finder patterns, with every other node being set
 QRAssist.prototype.drawTiming = function () {
     var that = this;
     this.svg.selectAll("rect").each(function (d) {
-        var test1 = (d.row == that.version.timing_offset) && (d.col > that.version.timing_offset) && (d.col < (that.size - that.version.timing_offset));
-        var test2 = (d.col == that.version.timing_offset) && (d.row > that.version.timing_offset) && (d.row < (that.size - that.version.timing_offset));
+        var timing_offset = that.version.timing_offset;
+        var test1 = (d.row == timing_offset) && (d.col > timing_offset) && (d.col < (that.size - timing_offset));
+        var test2 = (d.col == timing_offset) && (d.row > timing_offset) && (d.row < (that.size - timing_offset));
         if (test1 || test2) {
             if ((d.col + d.row) % 2) {
-                that.mark(this, d, WHITE, "timing");
+                that.mark(this, WHITE, "timing");
             }
             else {
-                that.mark(this, d, BLACK, "timing");
+                that.mark(this, BLACK, "timing");
             }
         }
     });
 };
 
+// "Every QR code must have a dark pixel, also known as a dark module, at the coordinates (8, 4*version + 9)."
 QRAssist.prototype.drawDark = function () {
-    // Every QR code must have a dark pixel, also known as a dark module, at the coordinates (8, 4*version + 9).
     var that = this;
     this.svg.selectAll("rect").each(function (d) {
-        if ((d.row == (that.size - 8)) && (d.col == 8)) {
-            that.mark(this, d, BLACK, "dark");
+        if ((d.col == 8) && (d.row == (4 * that.version_num + 9))) {
+            that.mark(this, BLACK, "dark");
         }
     });
 };
 
+// Draws the smaller alignment patterns
+// The QR spec defines a list of offsets for each QR version, such as [10,20]
+// Draw an alignment pattern at any offset where the the row and column numbers are both found in the list
+// For [10,20] this would be (10, 10), (10, 20), (20, 10), (20, 20)
+// Don't draw a pattern if the node is already labeled
 QRAssist.prototype.drawAlignments = function () {
     var that = this;
-    var offsets = [];
-    for (var i=0; i < this.version.alignments.length; i++) {
-        for (var j=0; j < this.version.alignments.length; j++) {
-            offsets.push(this.version.alignments[i] + "," + this.version.alignments[j]);
-        }
-    }
+    var alignments = this.version.alignments;
     this.svg.selectAll("rect").each(function (d) {
-        if (offsets.indexOf(d.row + "," + d.col) !== -1) {
+        if ((alignments.indexOf(d.row) !== -1) && (alignments.indexOf(d.col) !== -1)) {
             if (d.label) {
                 return;
             }
@@ -276,6 +290,8 @@ QRAssist.prototype.drawAlignments = function () {
     });
 };
 
+// Applies a mask function to the mutable nodes
+// Every row/col coordinate will be passed to the function argument, invert any node with a truthy response
 QRAssist.prototype.applyMask = function (mask) {
     var that = this;
     this.svg.selectAll("rect").each(function (d) {
@@ -284,11 +300,12 @@ QRAssist.prototype.applyMask = function (mask) {
                 return;
             }
             var new_color = d.val ? WHITE : BLACK;
-            that.mark(this, d, new_color);
+            that.mark(this, new_color);
         }
     });
 };
 
+// Picks out the format information nodes, doesn't account for version blocks for qr versions higher than 7
 QRAssist.prototype.drawFormatInfo = function () {
     var that = this;
     this.svg.selectAll("rect").each(function (d) {
@@ -327,7 +344,7 @@ QRAssist.prototype.drawFormatInfo = function () {
 
         if (d.format_cell !== undefined) {
             that.format_nodes[d.format_cell].push(this);
-            that.mark(this, d, WHITE, "format");
+            that.mark(this, WHITE, "format");
         }
     });
 };
@@ -351,6 +368,10 @@ function QRAssistController (QRA, start_row, start_col) {
     this.write_direction = "up";
 }
 
+// Function to read QR code bits out in the proper order
+// The idea is to go up and down, right to left, reading two wide strips of nodes 
+// To do this, it iterates backwards over every other column. Each column gets two passes, one to 
+//   read the node from the current column, and one to read the node from the column to the left of it
 QRAssistController.prototype.readBits = function (count) {
     // var that = this;
     var bits = [];
@@ -358,19 +379,22 @@ QRAssistController.prototype.readBits = function (count) {
     // var color = "#" + pad(Math.floor(Math.random() * 16777214).toString(16), 6);
     while (true) {
         var node;
-        // Every other row, check col-1 for the value
+        
+        // If we're outside the code, stop trying to read
         if (this.read_col < 0) {
             return bits.join("");
         }
 
+        // Every other row, read col-1
         if (this.read_prev_col) {
             node = this.qr.offset_map[this.read_row][this.read_col - 1];
 
-            // If we're reading col-1, change row after saving node
             if (this.read_direction == "up") {
                 if (this.read_row == 0) {
                     this.read_direction = "down";
                     this.read_col -= 2;
+
+                    // Skip the column used for timing, reset an extra node over.
                     if (this.read_col == 6) {
                         this.read_col -= 1;
                     }
@@ -392,10 +416,12 @@ QRAssistController.prototype.readBits = function (count) {
         else {
             node = this.qr.offset_map[this.read_row][this.read_col];
         }
-
+        
+        // Go back to the other column
         this.read_prev_col = this.read_prev_col ? false : true;
 
         d3.select(node).each(function (d) {
+            // Any node that doesnt have a label in IGNORE_LABELS is considered a data node
             if (IGNORE_LABELS.indexOf(d.label) === -1) {
                 // that.qr.mark(this, d, color)
                 var node_val = d.val;
@@ -409,6 +435,7 @@ QRAssistController.prototype.readBits = function (count) {
     }
 };
 
+// Write bits following the exact same rules as reading
 QRAssistController.prototype.writeBits = function (bit_string) {
     var that = this;
     var bits = bit_string.split("");
@@ -457,10 +484,10 @@ QRAssistController.prototype.writeBits = function (bit_string) {
             if (IGNORE_LABELS.indexOf(d.label) === -1) {
                 var bit = bits.shift();
                 if (bit === '0') {
-                    that.qr.mark(node, d, WHITE);
+                    that.qr.mark(node, WHITE);
                 }
                 else {
-                    that.qr.mark(node, d, BLACK);
+                    that.qr.mark(node, BLACK);
                 }
             }
         });
@@ -469,6 +496,7 @@ QRAssistController.prototype.writeBits = function (bit_string) {
         }
     }
 };
+
 /*
  ---------- ---------- ----------
 |          |          |  Code 1  |
@@ -510,8 +538,6 @@ QRAssistController.prototype.writeBits = function (bit_string) {
         Determine number of blocks, n
         Create array of n arrays, a
         Iterate over d blocks, sending them to a[i%n]
-
-
 
 */
 
@@ -555,7 +581,7 @@ function init () {
         document.body.appendChild(mask_el);
     }
 
-    setTimeout(function () {
+    setInterval(function () {
         r = new QRAssistController(qr);
         var blocks = [];
         while (true) {
@@ -574,7 +600,7 @@ function init () {
         catch (e) {
             match = joined_blocks;
         }
-        console.log(btoa(match));
+        // console.log(btoa(match));
         var offset = 0;
         var data = [];
         var iterations = 0;
