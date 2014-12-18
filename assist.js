@@ -572,6 +572,7 @@ QRDataReader.prototype.readBytes = function (length) {
 
 QRDataReader.prototype.readData = function () {
     var data = {};
+
     data.encoding = parseInt(this.read(4), 2);
 
     if (data.encoding === 0) {
@@ -587,7 +588,10 @@ QRDataReader.prototype.readData = function () {
     else if (data.encoding == 4) {
         data.text = this.readBytes(data.length);
     }
-
+    else {
+        data.encoding = undefined;
+        data.length = undefined;
+    }
     return data;
 }
 
@@ -609,6 +613,23 @@ function createMaskButtons() {
     }
 }
 
+function readAllData(qr) {
+    var reader = new QRDataReader(qr);
+
+    var datas = [];
+    while (true) {
+        var qrdata = reader.readData();
+        if (!qrdata.encoding) {
+            break;
+        }
+        datas.push(qrdata);
+    }
+    
+    return datas.map(function (e) { 
+        return e.text;
+    }).join("");
+}
+
 function init () {
     var svg = d3.select("svg");
     qr = new QRCode(svg, 3, "H");
@@ -622,21 +643,8 @@ function init () {
         r.writeBits(data);
     }
 
-    var reader = new QRDataReader(qr);
-
-    var datas = [];
-    while (true) {
-        var qrdata = reader.readData();
-        if (qrdata.encoding === 0) {
-            break;
-        }
-        datas.push(qrdata);
-    }
-    
-    var all_data = datas.map(function (e) { 
-        return e.text;
-    }).join("");
-
-    document.getElementById("qrbytes").innerHTML = all_data;
-    
+    setInterval(function () {
+        var all_data = readAllData(qr);
+        document.getElementById("qrbytes").innerHTML = all_data;
+    }, 100);
 }
