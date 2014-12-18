@@ -555,6 +555,9 @@ QRDataReader.prototype.readAlpha = function (length) {
     var str = "";
     for (var i=0; i < length / 2; i++) {
         var bits = parseInt(this.read(11), 2);
+        if (!bits) {
+            break;
+        }
         str += ALPHA[Math.floor(bits / 45)];
         str += ALPHA[Math.floor(bits % 45)];
     }
@@ -565,6 +568,9 @@ QRDataReader.prototype.readBytes = function (length) {
     var str = "";
     for (var i=0; i < length; i++) {
         var bits = parseInt(this.read(8), 2);
+        if (!bits) {
+            break;
+        }
         str += String.fromCharCode(bits);
     }
     return str;
@@ -624,9 +630,8 @@ function readAllData(qr) {
         }
         datas.push(qrdata);
     }
-    
     return datas.map(function (e) { 
-        return e.text;
+        return e.text || "";
     }).join("");
 }
 
