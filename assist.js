@@ -115,7 +115,7 @@ var TYPEBITS_MAP = {
     32170: { "ecc_level": "L", "mask": 2 },
 };
 
-function QRAssist (svg, version, ec) {
+function QRCode (svg, version, ec) {
     this.svg = svg;
     this.version = VERSIONS[version];
     this.version_num = version;
@@ -127,7 +127,7 @@ function QRAssist (svg, version, ec) {
     this.setup();
 }
 
-QRAssist.prototype.setup = function () {
+QRCode.prototype.setup = function () {
     this.svg
         .style("fill", "white")
         .style("stroke", "grey");
@@ -150,8 +150,8 @@ QRAssist.prototype.setup = function () {
     this.drawFormatInfo();
 };
 
-// Creates the base data for d3, makes size*size elements with defined coordinates
-QRAssist.prototype.getData = function () {
+// Creates the base data for d3, makes (size * size) elements with defined coordinates
+QRCode.prototype.getData = function () {
     var cell_data = [];
     for (var i=0; i < this.size; i++) {
         for (var j=0; j < this.size; j++) {
@@ -166,7 +166,7 @@ QRAssist.prototype.getData = function () {
 };
 
 // Sets up the clean grid of squares
-QRAssist.prototype.addRects = function() {
+QRCode.prototype.addRects = function() {
     var that = this;
     this.svg
         .selectAll("rect")
@@ -199,7 +199,7 @@ QRAssist.prototype.addRects = function() {
 };
 
 // Changes the status/color of a node, adds a label if provided
-QRAssist.prototype.mark = function (node, color, label) {
+QRCode.prototype.mark = function (node, color, label) {
     var d3_node = d3.select(node);
     var data = d3_node.data()[0];
     d3_node.style("fill", color);
@@ -212,7 +212,7 @@ QRAssist.prototype.mark = function (node, color, label) {
 };
 
 // Takes a pattern of bits and draws them at the provided offset
-QRAssist.prototype.drawPixels = function (pattern, offset, label) {
+QRCode.prototype.drawPixels = function (pattern, offset, label) {
     var that = this;
     this.svg.selectAll("rect").each(function (d) {
         // Subtract offset from current node
@@ -237,7 +237,7 @@ QRAssist.prototype.drawPixels = function (pattern, offset, label) {
 };
 
 // Draws the finder patterns in three corners
-QRAssist.prototype.drawFinders = function () {
+QRCode.prototype.drawFinders = function () {
     this.drawPixels(FINDER, [-1, -1], "finder");
     this.drawPixels(FINDER, [-1, this.size - FINDER_LEN + 1], "finder");
     this.drawPixels(FINDER, [this.size - FINDER_LEN + 1, -1], "finder");
@@ -245,7 +245,7 @@ QRAssist.prototype.drawFinders = function () {
 
 // Draw the horizontal and vertical timing markers
 // These are placed between the inner corners of finder patterns, with every other node being set
-QRAssist.prototype.drawTiming = function () {
+QRCode.prototype.drawTiming = function () {
     var that = this;
     this.svg.selectAll("rect").each(function (d) {
         var timing_offset = that.version.timing_offset;
@@ -263,7 +263,7 @@ QRAssist.prototype.drawTiming = function () {
 };
 
 // "Every QR code must have a dark pixel, also known as a dark module, at the coordinates (8, 4*version + 9)."
-QRAssist.prototype.drawDark = function () {
+QRCode.prototype.drawDark = function () {
     var that = this;
     this.svg.selectAll("rect").each(function (d) {
         if ((d.col == 8) && (d.row == (4 * that.version_num + 9))) {
@@ -277,7 +277,7 @@ QRAssist.prototype.drawDark = function () {
 // Draw an alignment pattern at any offset where the the row and column numbers are both found in the list
 // For [10,20] this would be (10, 10), (10, 20), (20, 10), (20, 20)
 // Don't draw a pattern if the node is already labeled
-QRAssist.prototype.drawAlignments = function () {
+QRCode.prototype.drawAlignments = function () {
     var that = this;
     var alignments = this.version.alignments;
     this.svg.selectAll("rect").each(function (d) {
@@ -292,7 +292,7 @@ QRAssist.prototype.drawAlignments = function () {
 
 // Applies a mask function to the mutable nodes
 // Every row/col coordinate will be passed to the function argument, invert any node with a truthy response
-QRAssist.prototype.applyMask = function (mask) {
+QRCode.prototype.applyMask = function (mask) {
     var that = this;
     this.svg.selectAll("rect").each(function (d) {
         if (mask(d.row, d.col)) {
@@ -306,7 +306,7 @@ QRAssist.prototype.applyMask = function (mask) {
 };
 
 // Picks out the format information nodes, doesn't account for version blocks for qr versions higher than 7
-QRAssist.prototype.drawFormatInfo = function () {
+QRCode.prototype.drawFormatInfo = function () {
     var that = this;
     this.svg.selectAll("rect").each(function (d) {
         if ((d.row == 8) && (d.col == 0)) { d.format_cell = 14; }
@@ -355,8 +355,9 @@ function pad(n, width, z) {
   return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
 }
 
-function QRAssistController (QRA, start_row, start_col) {
+function QRBitReader (QRA, start_row, start_col) {
     this.qr = QRA;
+
     this.read_row = start_row || QRA.size - 1;
     this.read_col = start_col || QRA.size - 1;
     this.read_prev_col = false;
@@ -372,7 +373,7 @@ function QRAssistController (QRA, start_row, start_col) {
 // The idea is to go up and down, right to left, reading two wide strips of nodes 
 // To do this, it iterates backwards over every other column. Each column gets two passes, one to 
 //   read the node from the current column, and one to read the node from the column to the left of it
-QRAssistController.prototype.readBits = function (count) {
+QRBitReader.prototype.readBits = function (count) {
     // var that = this;
     var bits = [];
 
@@ -436,7 +437,7 @@ QRAssistController.prototype.readBits = function (count) {
 };
 
 // Write bits following the exact same rules as reading
-QRAssistController.prototype.writeBits = function (bit_string) {
+QRBitReader.prototype.writeBits = function (bit_string) {
     var that = this;
     var bits = bit_string.split("");
 
@@ -497,53 +498,34 @@ QRAssistController.prototype.writeBits = function (bit_string) {
     }
 };
 
-/*
- ---------- ---------- ----------
-|          |          |  Code 1  |
-|          |          |  Code 2  |
-|          | Block 1  |  Code 3  |
-|          |          |  Code 4  |
-|          |          |  Code 5  |
-| Group 1  |----------|----------|
-|          |          |  Code 6  |
-|          |          |  Code 7  |
-|          | Block 2  |  Code 8  |
-|          |          |  Code 9  |
-|          |          |  Code 10 |
- ---------- ---------- ----------
-|          |          |  Code 11 |
-|          |          |  Code 12 |
-|          | Block 1  |  Code 13 |
-|          |          |  Code 14 |
-|          |          |  Code 15 |
-| Group 2  |----------|----------|
-|          |          |  Code 16 |
-|          |          |  Code 17 |
-|          | Block 2  |  Code 18 |
-|          |          |  Code 19 |
-|          |          |  Code 20 |
- ---------- ---------- ----------
+function QRDataReader (qr) {
+    this.qr = qr;
+    this.offset = 0;
+    this.setup();
+}
 
- The blocks are interleaved by doing the following:
+QRDataReader.prototype.setup = function () {
+    this.raw_codewords = this.readCodewords(); 
+    this.sorted_codewords = this.sortCodewords();
+    this.joined_codewords = this.sorted_codewords.join("");
+};
 
-    take the first data codeword from the first block
-    followed by the first data codeword from the second block
-    followed by the first data codeword from the third block
-    followed by the first data codeword from the fourth block
-    followed by the second data codeword from the first block
-    and so on
+// Reads the whole QR code 8 bits at a time 
+QRDataReader.prototype.readCodewords = function () {
+    var bitreader = new QRBitReader(this.qr);
+    var codewords = [];
+    while (true) {
+        var codeword = bitreader.readBits(8);
+        if (codeword === "") {
+            break;
+        }
+        codewords.push(codeword);
+    }
+    return codewords;
+};
 
-    So:
-        Determine number of data blocks, d
-        Determine number of blocks, n
-        Create array of n arrays, a
-        Iterate over d blocks, sending them to a[i%n]
-
-*/
-
-// "H": { "ec_per_block": 22, "groups": 1, "group_blocks": 2, "codewords_in_group": 13 },
-function reorder_codewords(qr, codewords) {
-    var ec_data = qr.version.ec_table[qr.ec];
+QRDataReader.prototype.sortCodewords = function () {
+    var ec_data = this.qr.version.ec_table[qr.ec];
     
     // Create an array for un-interpolating
     var blocked_codewords = [];
@@ -551,20 +533,65 @@ function reorder_codewords(qr, codewords) {
         blocked_codewords[i] = [];
     }
 
+    // Drop codewords in each bucket
     var data_codes = ec_data.groups * ec_data.group_blocks * ec_data.codewords_in_group;
     for (var j=0; j < data_codes; j++) {
-        blocked_codewords[j % blocked_codewords.length].push(codewords[j]);
+        blocked_codewords[j % blocked_codewords.length].push(this.raw_codewords[j]);
     }
 
+    // Join the sorted buckets back together
     return blocked_codewords.map(function (val) {
         return val.join("");
     });
+}; 
+
+QRDataReader.prototype.read = function (bits) {
+    var data = this.joined_codewords.substr(this.offset, bits);
+    this.offset += bits;
+    return data;
+};
+
+QRDataReader.prototype.readAlpha = function (length) {
+    var str = "";
+    for (var i=0; i < length / 2; i++) {
+        var bits = parseInt(this.read(11), 2);
+        str += ALPHA[Math.floor(bits / 45)];
+        str += ALPHA[Math.floor(bits % 45)];
+    }
+    return str;
+};
+
+QRDataReader.prototype.readBytes = function (length) {
+    var str = "";
+    for (var i=0; i < length; i++) {
+        var bits = parseInt(this.read(8), 2);
+        str += String.fromCharCode(bits);
+    }
+    return str;
+};
+
+QRDataReader.prototype.readData = function () {
+    var data = {};
+    data.encoding = parseInt(this.read(4), 2);
+
+    if (data.encoding === 0) {
+        return data;
+    }
+
+    var length_bits = this.qr.version.encoding_len_bits[data.encoding];
+    data.length = parseInt(this.read(length_bits), 2);
+
+    if (data.encoding == 2) {
+        data.text = this.readAlpha(data.length);
+    }
+    else if (data.encoding == 4) {
+        data.text = this.readBytes(data.length);
+    }
+
+    return data;
 }
 
-function init () {
-    var svg = d3.select("svg");
-    qr = new QRAssist(svg, 3, "H");
-
+function createMaskButtons() {
     for (var i=0; i < MASKS.length; i++) {
         var mask_el = document.createElement("button");
         var label = "mask"+i;
@@ -580,78 +607,36 @@ function init () {
         mask_el.innerHTML = label;
         document.body.appendChild(mask_el);
     }
+}
 
-    setInterval(function () {
-        r = new QRAssistController(qr);
-        var blocks = [];
-        while (true) {
-            var block = r.readBits(8);
-            if (block === "") {
-                break;
-            }
-            blocks.push(block);
-        }
-        var ordered_codes = reorder_codewords(qr, blocks);
-        var ordered_bits = ordered_codes.join("");
-        var joined_blocks = blocks.join("");
-        try {
-        var match = /^([01]+?)0+$/.exec(joined_blocks)[1];
-        }
-        catch (e) {
-            match = joined_blocks;
-        }
-        // console.log(btoa(match));
-        var offset = 0;
-        var data = [];
-        var iterations = 0;
-        while (true) {
-            iterations++;
-            if (iterations > 10) {
-                break;
-            }
-            var encoding = parseInt(ordered_bits.substr(offset, 4), 2);
-            offset += 4;
+function init () {
+    var svg = d3.select("svg");
+    qr = new QRCode(svg, 3, "H");
 
-            var length_bits = qr.version.encoding_len_bits[encoding];
-            var length = parseInt(ordered_bits.substr(offset, length_bits), 2);
-            offset += length_bits;
+    createMaskButtons();
 
-            if (encoding == 0) {
-                break;
-            }
-            if (encoding == 2) {
-                var str = [];
-                for (var k=0; k < length / 2; k++) {
-                    var bits = parseInt(ordered_bits.substr(offset, 11), 2);
-                    offset += 11;
-                    str.push(ALPHA[Math.floor(bits / 45)]);
-                    str.push(ALPHA[Math.floor(bits % 45)]);
-                }
-                data.push(str);
-            }
-            if (encoding == 4) {
-                var str = [];
-                for (var l=0; l < length; l++) {
-                    var bits = parseInt(ordered_bits.substr(offset, 8), 2);
-                    offset += 8;
-                    var ccc = String.fromCharCode(bits);
-                    str.push(ccc);
-                }
-                data.push(str);
-            }
-            document.getElementById("qrbytes").innerHTML = data.map(function (val) {
-                return val.join("");
-            }).join("");
-
-            if (data.length > 1) {
-                break;
-            }
-        }
-    }, 100);
     if (document.location.hash) {
-        r = new QRAssistController(qr);
+        r = new QRBitReader(qr);
         var hash = document.location.hash.substr(1);
         var data = atob(hash);
         r.writeBits(data);
     }
+
+    var reader = new QRDataReader(qr);
+
+    var datas = [];
+    while (true) {
+        var qrdata = reader.readData();
+        if (qrdata.encoding === 0) {
+            break;
+        }
+        datas.push(qrdata);
+    }
+    
+    var all_data = datas.map(function (e) { 
+        return e.text;
+    }).join("");
+
+    document.getElementById("qrbytes").innerHTML = all_data;
+    
 }
