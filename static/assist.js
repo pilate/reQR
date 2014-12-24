@@ -22,6 +22,14 @@ function createMaskButtons() {
     }
 }
 
+function bitArrayToInts(bits) {
+    var bytes = [];
+    for (var i=0; i < bits.length; i++) {
+        bytes.push(parseInt(bits[i], 2));
+    }
+    return bytes;
+}
+
 function bitsToInts(bits) {
     var bytes = [];
     for (var i=0; i < bits.length; i += 8) {
@@ -31,19 +39,29 @@ function bitsToInts(bits) {
     return bytes;
 }
 
+function intArrayToString(ints) {
+    var string = "";
+    for (var i=0; i < ints.length; i++) {
+        string += String.fromCharCode(ints[i]);
+    }
+    return string;
+}
+
 function readAllData(qr) {
     var reader = new QRDataReader(qr);
 
-    // console.log(reader.raw_codewords.length, reader.joined_codewords.length / 8)
-    // console.log(reader.sorted_ec_codewords);
-    var joined_cw = reader.sorted_codewords.join("");
-    var int_array = bitsToInts(joined_cw);
-    var chars = int_array.map(function (d) {
-        return String.fromCharCode(d);
-    }).join("");
+    var rs = new ReedSolomon(18);
 
-    // var ec_joined_cw = reader.sorted_ec_codewords;
-    // console.log(reader.sorted_ec_codewords);
+    for (var i=0; i < reader.grouped_codewords.length; i++) {
+        var group = reader.grouped_codewords[i];
+        for (var j=0; j < group.length; j++) {
+            var block = bitArrayToInts(group[j]);
+            console.log(intArrayToString(block));
+            var block_ec = bitArrayToInts(reader.grouped_ec_codewords[i][j]);
+            var ec_check_data = block.concat(block_ec);
+            console.log(rs.decode(ec_check_data));
+        }
+    }
 
     // var joined_blocks = reader.raw_codewords.join("");
     // try {
@@ -53,12 +71,6 @@ function readAllData(qr) {
     //     match = joined_blocks;
     // }
     // console.log(btoa(match));
-
-    var rs = new ReedSolomon(36);
-    var enc = rs.encode(chars);
-    console.log("cw", reader.sorted_ec_codewords);
-    console.log("enc", enc);
-    var msg = rs.decode(enc);
 
     var datas = [];
     while (true) {
@@ -84,7 +96,7 @@ function init () {
         var hash = document.location.hash.substr(1);
         var data = atob(hash);
         r.writeBits(data);
-    }
+    } 
 
     setInterval(function () {
         var all_data = readAllData(qr);

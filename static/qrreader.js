@@ -149,8 +149,8 @@ function QRDataReader (qr) {
 
 QRDataReader.prototype.setup = function () {
     this.raw_codewords = this.readCodewords(); 
-    this.sorted_codewords = this.sortCodewords();
-    this.sorted_ec_codewords = this.sortECCodewords();
+    this.grouped_codewords = this.groupDataCodewords();
+    this.grouped_ec_codewords = this.groupECCodewords();
     this.joined_codewords = this.sorted_codewords.join("");
 };
 
@@ -168,68 +168,45 @@ QRDataReader.prototype.readCodewords = function () {
     return codewords;
 };
 
-QRDataReader.prototype.sortCodewords = function () {
+QRDataReader.prototype.groupDataCodewords = function () {
     var ec_data = this.qr.version.ec_table[qr.ec];
     
-    // Create an array for un-interpolating
-    var blocked_codewords = [];
-    for (var i=0; i < ec_data.groups * ec_data.group_blocks; i++) {
-        blocked_codewords[i] = [];
+    var group_array = [].arrayFiller(ec_data.groups)
+    for (var i=0; i < group_array.length; i++) {
+        group_array[i] = [].arrayFiller(ec_data.group_blocks);
     }
 
-    // Drop codewords in each bucket
-    var data_codes = ec_data.groups * ec_data.group_blocks * ec_data.codewords_in_group;
-    for (var j=0; j < data_codes; j++) {
-        blocked_codewords[j % blocked_codewords.length].push(this.raw_codewords[j]);
+    for (var j=0; j < ec_data.groups; j++) {
+        var codes = ec_data.group_blocks * ec_data.data_per_block;
+        for (var k=0; k < codes; k++) {
+            var codeword = this.raw_codewords[ (j * codes) + k ];
+            group_array[j][k % ec_data.group_blocks].push(codeword);
+        }
     }
 
-    // Join the sorted buckets back together
-    return blocked_codewords.map(function (val) {
-        return val.join("");
-    });
+    return group_array;
 }; 
 
-QRDataReader.prototype.sortECCodewords = function () {
+QRDataReader.prototype.groupECCodewords = function () {
     var ec_data = this.qr.version.ec_table[qr.ec];
     
-    var data_codewords = ec_data.groups * ec_data.group_blocks * ec_data.codewords_in_group;
-    var ec_codewords = this.raw_codewords.slice(data_codewords);
-
-    // Create an array for un-interpolating
-    var blocked_codewords = [];
-    for (var i=0; i < ec_data.groups * ec_data.group_blocks; i++) {
-        blocked_codewords[i] = [];
+    var group_array = [].arrayFiller(ec_data.groups)
+    for (var i=0; i < group_array.length; i++) {
+        group_array[i] = [].arrayFiller(ec_data.group_blocks);
     }
 
-    // Drop codewords in each bucket
-    var ec_codes = ec_data.groups * ec_data.group_blocks * ec_data.ec_per_block;
-    for (var j=0; j < ec_codes; j++) {
-        blocked_codewords[j % blocked_codewords.length].push(parseInt(ec_codewords[j], 2));
+    var ec_offset = ec_data.group_blocks * ec_data.data_per_block * ec_data.groups;
+    for (var j=0; j < ec_data.groups; j++) {
+        var codes = ec_data.group_blocks * ec_data.ec_per_block;
+        for (var k=0; k < codes; k++) {
+            var codeword = this.raw_codewords[ ec_offset + (j * codes) + k ];
+            group_array[j][k % ec_data.group_blocks].push(codeword);
+        }
     }
 
-    // Join the sorted buckets back together
-    var all_ec = [];
-    blocked_codewords.map(function (val) {
-        all_ec = all_ec.concat(val);
-    });
-    return all_ec;
+    return group_array;
 }; 
 
-QRDataReader.prototype.getECCodewords = function () {
-    var ec_data = this.qr.version.ec_table[qr.ec];
-    var codewords = [];
-
-    var ec_codes = ec_data.groups * ec_data.group_blocks * ec_data.ec_per_block;
-    var ec_offset = ec_data.groups * ec_data.group_blocks * ec_data.codewords_in_group;
-    ec_offset--; ec_offset--;
-    for (var j=0; j < ec_codes; j++) {
-        codewords.push(this.raw_codewords[ec_offset + j]);
-    }
-    console.log(codewords);
-
-    // Join the sorted buckets back together
-    return codewords.join("");
-}; 
 
 QRDataReader.prototype.read = function (bits) {
     var data = this.joined_codewords.substr(this.offset, bits);

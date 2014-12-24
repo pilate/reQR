@@ -61,10 +61,10 @@ var VERSIONS = {
             8: 8
         },
         "ec_table": {
-            "L": { "ec_per_block": 15, "groups": 1, "group_blocks": 1, "codewords_in_group": 55 },
-            "M": { "ec_per_block": 26, "groups": 1, "group_blocks": 1, "codewords_in_group": 44 },
-            "Q": { "ec_per_block": 18, "groups": 1, "group_blocks": 2, "codewords_in_group": 17 },
-            "H": { "ec_per_block": 22, "groups": 1, "group_blocks": 2, "codewords_in_group": 13 },
+            "L": { "ec_per_block": 15, "groups": 1, "group_blocks": 1, "data_per_block": 55 },
+            "M": { "ec_per_block": 26, "groups": 1, "group_blocks": 1, "data_per_block": 44 },
+            "Q": { "ec_per_block": 18, "groups": 1, "group_blocks": 2, "data_per_block": 17 },
+            "H": { "ec_per_block": 22, "groups": 1, "group_blocks": 2, "data_per_block": 13 },
         }
     }
 };
