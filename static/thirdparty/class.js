@@ -62,8 +62,3 @@
     return Class;
   };
 })();
-
-Array.prototype.arrayFiller = function(L) {
-  while (L) this[--L] = [];
-  return this;
-}

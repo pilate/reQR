@@ -1,8 +1,4 @@
-function pad(n, width, z) {
-  z = z || '0';
-  n = n + '';
-  return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
-}
+
 
 function createMaskButtons() {
     for (var i=0; i < MASKS.length; i++) {
@@ -18,7 +14,7 @@ function createMaskButtons() {
             })(i)
         );
         mask_el.innerHTML = label;
-        document.body.appendChild(mask_el);
+        document.getElementById("body2").appendChild(mask_el);
     }
 }
 

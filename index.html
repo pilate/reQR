@@ -1,18 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
-        <meta http-equiv="content-type" content="text/html; charset=UTF8">
-        <title>QR Assistant</title>
-        <script src="static/d3.js"></script>
-        <script src="static/class.js"></script>
-        <script src="static/rs.js"></script>
-        <script src="static/qrsettings.js"></script>
-        <script src="static/qrcode.js"></script>
-        <script src="static/qrreader.js"></script>
-        <script src="static/assist.js"></script>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>reQR</title>
+
+        <link href="static/thirdparty/bootstrap.css" rel="stylesheet">
+        <link href="static/reqr.css" rel="stylesheet">
     </head>
+
     <body onload="init()">
-        <svg width="610" height="610" id="svg"></svg>
-        <p>Text: <span id="qrbytes"></span></p>
+
+        <nav class="navbar navbar-inverse navbar-fixed-top">
+            <div class="container">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="#">reQR</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container" id="body2">
+
+            <svg width="610" height="610" id="svg"></svg>
+            <p>Text: <span id="qrbytes"></span></p>
+
+        </div>
     </body>
+
+    <!-- Third party -->
+    <script src="static/thirdparty/jquery.js"></script>
+    <script src="static/thirdparty/bootstrap.js"></script>
+    <script src="static/thirdparty/knockout.js"></script>
+    <script src="static/thirdparty/d3.js"></script>
+    <script src="static/thirdparty/class.js"></script>
+    <script src="static/thirdparty/rs.js"></script>
+    <!-- reQR -->
+    <script src="static/misc.js"></script>
+    <script src="static/qrsettings.js"></script>
+    <script src="static/qrcode.js"></script>
+    <script src="static/qrreader.js"></script>
+    <script src="static/assist.js"></script>
 </html>
