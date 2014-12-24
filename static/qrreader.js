@@ -1,145 +1,97 @@
-function QRBitReader (QRA, start_row, start_col) {
-    this.qr = QRA;
 
-    this.read_row = start_row || QRA.size - 1;
-    this.read_col = start_col || QRA.size - 1;
+
+function QRFile ( qr ) {
+    this.qr = qr;
+    this.row = qr.size - 1;
+    this.col = qr.size - 1;
+    this.direction = UP;
     this.read_prev_col = false;
-    this.read_direction = "up";
-
-    this.write_row = start_row || QRA.size - 1;
-    this.write_col = start_col || QRA.size - 1;
-    this.write_prev_col = false;
-    this.write_direction = "up";
 }
 
-// Function to read QR code bits out in the proper order
-// The idea is to go up and down, right to left, reading two wide strips of nodes 
-// To do this, it iterates backwards over every other column. Each column gets two passes, one to 
-//   read the node from the current column, and one to read the node from the column to the left of it
-QRBitReader.prototype.readBits = function (count) {
-    // var that = this;
-    var bits = [];
-
-    // var color = "#" + pad(Math.floor(Math.random() * 16777214).toString(16), 6);
+QRFile.prototype.next = function (node_fn) {
+    var that = this;
+    var node;
+    
     while (true) {
-        var node;
-        
         // If we're outside the code, stop trying to read
-        if (this.read_col < 0) {
-            return bits.join("");
-        }
+        if (this.col < 0) { return -1; }
 
         // Every other row, read col-1
         if (this.read_prev_col) {
-            node = this.qr.offset_map[this.read_row][this.read_col - 1];
+            node = this.qr.offset_map[this.row][this.col - 1];
 
-            if (this.read_direction == "up") {
-                if (this.read_row == 0) {
-                    this.read_direction = "down";
-                    this.read_col -= 2;
+            if (this.direction == UP) {
+                if (this.row == 0) {
+                    this.direction = DOWN;
+                    this.col -= 2;
 
                     // Skip the column used for timing, reset an extra node over.
-                    if (this.read_col == 6) {
-                        this.read_col -= 1;
+                    if (this.col == 6) {
+                        this.col -= 1;
                     }
                 }
                 else {
-                    this.read_row -= 1;
+                    this.row -= 1;
                 }
             }
-            else if (this.read_direction == "down") {
-                if (this.read_row == (this.qr.size - 1)) {
-                    this.read_direction = "up";
-                    this.read_col -= 2;
+            else if (this.direction == DOWN) {
+                if (this.row == (this.qr.size - 1)) {
+                    this.direction = UP;
+                    this.col -= 2;
                 }
                 else {
-                    this.read_row += 1;
+                    this.row += 1;
                 }
             }
         }
         else {
-            node = this.qr.offset_map[this.read_row][this.read_col];
+            node = this.qr.offset_map[this.row][this.col];
         }
         
         // Go back to the other column
         this.read_prev_col = this.read_prev_col ? false : true;
 
-        d3.select(node).each(function (d) {
-            // Any node that doesnt have a label in IGNORE_LABELS is considered a data node
-            if (IGNORE_LABELS.indexOf(d.label) === -1) {
-                // that.qr.mark(this, d, color)
-                var node_val = d.val;
-                bits.push(node_val);
-            }
-        });
+        var node_data = d3.select(node).data()[0]
+        var is_dynamic = IGNORE_LABELS.indexOf(node_data.label) === -1
 
-        if (bits.length === count) {
-            return bits.join("");
-        }
+        if (is_dynamic) {
+            return node_fn(node, node_data);
+        }   
     }
-};
+}
 
-// Write bits following the exact same rules as reading
-QRBitReader.prototype.writeBits = function (bit_string) {
+QRFile.prototype.readBits = function (length) {
+    var bits = ""
+    for (var i=0; i < length; i++) {
+        var result = this.next(function (node, data) {
+            return data.val;
+        });
+        if (result === -1) {
+            break;
+        }
+        bits += result;
+    }
+    return bits;
+}
+
+QRFile.prototype.writeBits = function (bits) {
     var that = this;
-    var bits = bit_string.split("");
-
-    while (true) {
-        var node;
-
-        // Every other row, check col-1 for the value
-        if (this.write_col < 0) {
-            return;
-        }
-
-        if (this.write_prev_col) {
-            node = this.qr.offset_map[this.write_row][this.write_col - 1];
-
-            // If we're reading col-1, change row after saving node
-            if (this.write_direction == "up") {
-                if (this.write_row == 0) {
-                    this.write_direction = "down";
-                    this.write_col -= 2;
-                    if (this.write_col == 6) {
-                        this.write_col -= 1;
-                    }
-                }
-                else {
-                    this.write_row -= 1;
-                }
+    bits = bits.split("");
+    while (bits.length) {
+        var res = this.next(function (node, data) {
+            var bit = bits.shift();
+            if (!Number(bit)) {
+                that.qr.mark(node, WHITE);
             }
-            else if (this.write_direction == "down") {
-                if (this.write_row == (this.qr.size - 1)) {
-                    this.write_direction = "up";
-                    this.write_col -= 2;
-                }
-                else {
-                    this.write_row += 1;
-                }
-            }
-        }
-        else {
-            node = this.qr.offset_map[this.write_row][this.write_col];
-        }
-
-        this.write_prev_col = this.write_prev_col ? false : true;
-
-        d3.select(node).each(function (d) {
-            if (IGNORE_LABELS.indexOf(d.label) === -1) {
-                var bit = bits.shift();
-                if (bit === '0') {
-                    that.qr.mark(node, WHITE);
-                }
-                else {
-                    that.qr.mark(node, BLACK);
-                }
+            else {
+                that.qr.mark(node, BLACK);
             }
         });
-        if (!bits.length) {
+        if (res === -1) {
             break;
         }
     }
-};
+}
 
 function QRDataReader (qr) {
     this.qr = qr;
@@ -151,19 +103,24 @@ QRDataReader.prototype.setup = function () {
     this.raw_codewords = this.readCodewords(); 
     this.grouped_codewords = this.groupDataCodewords();
     this.grouped_ec_codewords = this.groupECCodewords();
-    this.joined_codewords = this.sorted_codewords.join("");
+    this.joined_codewords = this.grouped_codewords.map(function (group) {
+        return group.map(function (block) {
+            return block.join("");
+        }).join("");
+    }).join("");
+    // this.joined_codewords = this.sorted_codewords.join("");
 };
 
 // Reads the whole QR code 8 bits at a time 
 QRDataReader.prototype.readCodewords = function () {
-    var bitreader = new QRBitReader(this.qr);
+    var qr_file = new QRFile(this.qr);
     var codewords = [];
     while (true) {
-        var codeword = bitreader.readBits(8);
+        var codeword = qr_file.readBits(8);
         if ((codeword === "") || (codeword.length < 8)) {
             break;
         }
-        codewords.push(codeword);
+        codewords.push(codeword); 
     }
     return codewords;
 };

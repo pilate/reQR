@@ -49,19 +49,18 @@ function intArrayToString(ints) {
 
 function readAllData(qr) {
     var reader = new QRDataReader(qr);
+    // var rs = new ReedSolomon(18);
 
-    var rs = new ReedSolomon(18);
-
-    for (var i=0; i < reader.grouped_codewords.length; i++) {
-        var group = reader.grouped_codewords[i];
-        for (var j=0; j < group.length; j++) {
-            var block = bitArrayToInts(group[j]);
-            console.log(intArrayToString(block));
-            var block_ec = bitArrayToInts(reader.grouped_ec_codewords[i][j]);
-            var ec_check_data = block.concat(block_ec);
-            console.log(rs.decode(ec_check_data));
-        }
-    }
+    // for (var i=0; i < reader.grouped_codewords.length; i++) {
+    //     var group = reader.grouped_codewords[i];
+    //     for (var j=0; j < group.length; j++) {
+    //         var block = bitArrayToInts(group[j]);
+    //         console.log(intArrayToString(block));
+    //         var block_ec = bitArrayToInts(reader.grouped_ec_codewords[i][j]);
+    //         var ec_check_data = block.concat(block_ec);
+    //         console.log(rs.decode(ec_check_data));
+    //     }
+    // }
 
     // var joined_blocks = reader.raw_codewords.join("");
     // try {
@@ -92,13 +91,13 @@ function init () {
     createMaskButtons();
 
     if (document.location.hash) {
-        r = new QRBitReader(qr);
         var hash = document.location.hash.substr(1);
         var data = atob(hash);
-        r.writeBits(data);
+        var qr_file = new QRFile(qr);
+        qr_file.writeBits(data);
     } 
 
-    setInterval(function () {
+    setTimeout(function () {
         var all_data = readAllData(qr);
         document.getElementById("qrbytes").innerHTML = all_data;
     }, 5000);
