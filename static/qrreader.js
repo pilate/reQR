@@ -1,5 +1,6 @@
 
-
+// Traversing a QR code is relatively complicated, this gives a basic file
+//  interface to make reading/writing easy
 function QRFile ( qr ) {
     this.qr = qr;
     this.row = qr.size - 1;
@@ -8,7 +9,8 @@ function QRFile ( qr ) {
     this.read_prev_col = false;
 }
 
-QRFile.prototype.next = function (node_fn) {
+// Find the next 'data' node and eturn the result of callback(node, node_data)
+QRFile.prototype.next = function (callback) {
     var node;
     
     while (true) {
@@ -19,13 +21,13 @@ QRFile.prototype.next = function (node_fn) {
         if (this.read_prev_col) {
             node = this.qr.offset_map[this.row][this.col - 1];
 
-            if (this.direction == UP) {
-                if (this.row == 0) {
+            if (this.direction === UP) {
+                if (this.row === 0) {
                     this.direction = DOWN;
                     this.col -= 2;
 
-                    // Skip the column used for timing, reset an extra node over.
-                    if (this.col == 6) {
+                    // Skip the column used for timing, reset an extra column over.
+                    if (this.col === 6) {
                         this.col -= 1;
                     }
                 }
@@ -34,7 +36,7 @@ QRFile.prototype.next = function (node_fn) {
                 }
             }
             else if (this.direction == DOWN) {
-                if (this.row == (this.qr.size - 1)) {
+                if (this.row === (this.qr.size - 1)) {
                     this.direction = UP;
                     this.col -= 2;
                 }
@@ -50,17 +52,18 @@ QRFile.prototype.next = function (node_fn) {
         // Go back to the other column
         this.read_prev_col = this.read_prev_col ? false : true;
 
-        var node_data = d3.select(node).data()[0]
-        var is_dynamic = IGNORE_LABELS.indexOf(node_data.label) === -1
+        var node_data = d3.select(node).data()[0];
+        var is_dynamic = IGNORE_LABELS.indexOf(node_data.label) === -1;
 
         if (is_dynamic) {
-            return node_fn(node, node_data);
+            return callback(node, node_data);
         }   
     }
-}
+};
 
+// Reads length bits from the QR code, returns a string of 0 and 1
 QRFile.prototype.readBits = function (length) {
-    var bits = ""
+    var bits = "";
     for (var i=0; i < length; i++) {
         var result = this.next(function (node, data) {
             return data.val;
@@ -71,8 +74,9 @@ QRFile.prototype.readBits = function (length) {
         bits += result;
     }
     return bits;
-}
+};
 
+// Writes a string of 0 and 1 to the QR code
 QRFile.prototype.writeBits = function (bits) {
     var that = this;
     bits = bits.split("");
@@ -90,8 +94,9 @@ QRFile.prototype.writeBits = function (bits) {
             break;
         }
     }
-}
+};
 
+// Dumb string reader
 function StringFile (str) {
     this.str = str;
     this.offset = 0;
@@ -139,7 +144,7 @@ QRDataReader.prototype.readAllCodewords = function () {
 QRDataReader.prototype.groupDataCodewords = function () {
     var ec_data = this.qr.version.ec_table[qr.ec];
     
-    var group_array = [].arrayFiller(ec_data.groups)
+    var group_array = [].arrayFiller(ec_data.groups);
     for (var i=0; i < group_array.length; i++) {
         group_array[i] = [].arrayFiller(ec_data.group_blocks);
     }
@@ -158,7 +163,7 @@ QRDataReader.prototype.groupDataCodewords = function () {
 QRDataReader.prototype.groupECCodewords = function () {
     var ec_data = this.qr.version.ec_table[qr.ec];
     
-    var group_array = [].arrayFiller(ec_data.groups)
+    var group_array = [].arrayFiller(ec_data.groups);
     for (var i=0; i < group_array.length; i++) {
         group_array[i] = [].arrayFiller(ec_data.group_blocks);
     }
@@ -223,4 +228,4 @@ QRDataReader.prototype.readData = function () {
         data.length = undefined;
     }
     return data;
-}
+};

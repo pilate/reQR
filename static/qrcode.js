@@ -1,3 +1,4 @@
+
 function QRCode (svg, version, ec) {
     this.svg = svg;
     this.version = VERSIONS[version];

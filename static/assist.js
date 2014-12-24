@@ -70,7 +70,7 @@ function testErrors(reader) {
                     "group": i,
                     "original": data_str,
                     "fixed": corrected_str
-                })
+                });
             }
         }
     }

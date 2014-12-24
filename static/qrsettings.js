@@ -1,5 +1,6 @@
-var UP = "up"
-var DOWN = "down"
+
+var UP = 0;
+var DOWN = 1;
 
 var WHITE = d3.rgb(255, 255, 255);
 var BLACK = d3.rgb(0, 0, 0);
