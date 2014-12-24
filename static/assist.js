@@ -78,12 +78,12 @@ function testErrors(reader) {
 }
 
 function readAllData(qr) {
-    var reader = new QRDataReader(qr);
-
-    var errors = testErrors(reader);
+    var sorter = new QRDataSorter(qr);
+    var parser = new QRDataParser(qr, sorter.joined_data_codewords);
+    var errors = testErrors(sorter);
     console.log(errors);
 
-    // var joined_blocks = reader.raw_codewords.join("");
+    // var joined_blocks = sorter.raw_codewords.join("");
     // try {
     //     var match = /^([01]+?)0+$/.exec(joined_blocks)[1];
     // }
@@ -94,7 +94,7 @@ function readAllData(qr) {
 
     var datas = [];
     while (true) {
-        var qrdata = reader.readData();
+        var qrdata = parser.readData();
         if (!qrdata.encoding) {
             break;
         }
