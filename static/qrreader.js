@@ -111,7 +111,7 @@ function QRDataReader (qr) {
 }
 
 QRDataReader.prototype.setup = function () {
-    this.raw_codewords = this.readCodewords(); 
+    this.all_codewords = this.readAllCodewords(); 
     this.grouped_codewords = this.groupDataCodewords();
     this.grouped_ec_codewords = this.groupECCodewords();
     this.joined_data_codewords = this.grouped_codewords.map(function (group) {
@@ -123,7 +123,7 @@ QRDataReader.prototype.setup = function () {
 };
 
 // Reads the whole QR code 8 bits at a time 
-QRDataReader.prototype.readCodewords = function () {
+QRDataReader.prototype.readAllCodewords = function () {
     var qr_file = new QRFile(this.qr);
     var codewords = [];
     while (true) {
@@ -147,7 +147,7 @@ QRDataReader.prototype.groupDataCodewords = function () {
     for (var j=0; j < ec_data.groups; j++) {
         var codes = ec_data.group_blocks * ec_data.data_per_block;
         for (var k=0; k < codes; k++) {
-            var codeword = this.raw_codewords[ (j * codes) + k ];
+            var codeword = this.all_codewords[ (j * codes) + k ];
             group_array[j][k % ec_data.group_blocks].push(codeword);
         }
     }
@@ -167,7 +167,7 @@ QRDataReader.prototype.groupECCodewords = function () {
     for (var j=0; j < ec_data.groups; j++) {
         var codes = ec_data.group_blocks * ec_data.ec_per_block;
         for (var k=0; k < codes; k++) {
-            var codeword = this.raw_codewords[ ec_offset + (j * codes) + k ];
+            var codeword = this.all_codewords[ ec_offset + (j * codes) + k ];
             group_array[j][k % ec_data.group_blocks].push(codeword);
         }
     }

@@ -47,20 +47,41 @@ function intArrayToString(ints) {
     return string;
 }
 
+function testErrors(reader) {
+    var ec_per_block = reader.qr.version.ec_table[reader.qr.ec].ec_per_block;
+    var rs = new ReedSolomon(ec_per_block);
+    var errors = [];
+    for (var i=0; i < reader.grouped_codewords.length; i++) {
+        var data_group = reader.grouped_codewords[i];
+        var ec_group = reader.grouped_ec_codewords[i];
+
+        for (var j=0; j < data_group.length; j++) {
+            var data_block = data_group[j];
+            var data_ints = bitArrayToInts(data_block);
+            var data_str = intArrayToString(data_ints);
+
+            var ec_ints = bitArrayToInts(ec_group[j]);
+
+            var check_data = data_ints.concat(ec_ints);
+
+            var corrected_str = rs.decode(check_data);
+            if (corrected_str != data_str) {
+                errors.push({
+                    "group": i,
+                    "original": data_str,
+                    "fixed": corrected_str
+                })
+            }
+        }
+    }
+    return errors;
+}
+
 function readAllData(qr) {
     var reader = new QRDataReader(qr);
-    // var rs = new ReedSolomon(18);
 
-    // for (var i=0; i < reader.grouped_codewords.length; i++) {
-    //     var group = reader.grouped_codewords[i];
-    //     for (var j=0; j < group.length; j++) {
-    //         var block = bitArrayToInts(group[j]);
-    //         console.log(intArrayToString(block));
-    //         var block_ec = bitArrayToInts(reader.grouped_ec_codewords[i][j]);
-    //         var ec_check_data = block.concat(block_ec);
-    //         console.log(rs.decode(ec_check_data));
-    //     }
-    // }
+    var errors = testErrors(reader);
+    console.log(errors);
 
     // var joined_blocks = reader.raw_codewords.join("");
     // try {
