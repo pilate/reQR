@@ -9,7 +9,6 @@ function QRFile ( qr ) {
 }
 
 QRFile.prototype.next = function (node_fn) {
-    var that = this;
     var node;
     
     while (true) {
@@ -93,6 +92,18 @@ QRFile.prototype.writeBits = function (bits) {
     }
 }
 
+function StringFile (str) {
+    this.str = str;
+    this.offset = 0;
+}
+
+StringFile.prototype.read = function (len) {
+    var data = this.str.substr(this.offset, len);
+    this.offset += len;
+    return data;
+};
+
+
 function QRDataReader (qr) {
     this.qr = qr;
     this.offset = 0;
@@ -103,12 +114,12 @@ QRDataReader.prototype.setup = function () {
     this.raw_codewords = this.readCodewords(); 
     this.grouped_codewords = this.groupDataCodewords();
     this.grouped_ec_codewords = this.groupECCodewords();
-    this.joined_codewords = this.grouped_codewords.map(function (group) {
+    this.joined_data_codewords = this.grouped_codewords.map(function (group) {
         return group.map(function (block) {
             return block.join("");
         }).join("");
     }).join("");
-    // this.joined_codewords = this.sorted_codewords.join("");
+    this.data_file = new StringFile(this.joined_data_codewords);
 };
 
 // Reads the whole QR code 8 bits at a time 
@@ -164,17 +175,10 @@ QRDataReader.prototype.groupECCodewords = function () {
     return group_array;
 }; 
 
-
-QRDataReader.prototype.read = function (bits) {
-    var data = this.joined_codewords.substr(this.offset, bits);
-    this.offset += bits;
-    return data;
-};
-
 QRDataReader.prototype.readAlpha = function (length) {
     var str = "";
     for (var i=0; i < length / 2; i++) {
-        var bits = parseInt(this.read(11), 2);
+        var bits = parseInt(this.data_file.read(11), 2);
         if (!bits) {
             break;
         }
@@ -187,7 +191,7 @@ QRDataReader.prototype.readAlpha = function (length) {
 QRDataReader.prototype.readBytes = function (length) {
     var str = "";
     for (var i=0; i < length; i++) {
-        var bits = parseInt(this.read(8), 2);
+        var bits = parseInt(this.data_file.read(8), 2);
         if (!bits) {
             break;
         }
@@ -199,14 +203,14 @@ QRDataReader.prototype.readBytes = function (length) {
 QRDataReader.prototype.readData = function () {
     var data = {};
 
-    data.encoding = parseInt(this.read(4), 2);
+    data.encoding = parseInt(this.data_file.read(4), 2);
 
     if (data.encoding === 0) {
         return data;
     }
 
     var length_bits = this.qr.version.encoding_len_bits[data.encoding];
-    data.length = parseInt(this.read(length_bits), 2);
+    data.length = parseInt(this.data_file.read(length_bits), 2);
 
     if (data.encoding == 2) {
         data.text = this.readAlpha(data.length);
