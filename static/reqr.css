@@ -7,6 +7,14 @@ body {
     }
 }
 
+#svg {
+    margin-bottom: 10px;
+}
+
+#maskbuttons {
+    margin-bottom: 10px;
+}
+
 .navbar-inverse .navbar-brand {
     color: #CC5200;
 }

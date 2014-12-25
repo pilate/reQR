@@ -21,11 +21,92 @@
             </div>
         </nav>
 
-        <div class="container" id="body2">
+        <div class="container">
+            <svg width="610" height="610" id="svg" class="center-block"></svg>
 
-            <svg width="610" height="610" id="svg"></svg>
-            <p>Text: <span id="qrbytes"></span></p>
+            <div id="maskbuttons"></div>
 
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Parsed Data</h4>
+                            <table class="table">
+                                <thead>
+                                    <tr>   
+                                        <th>Encoding</th>
+                                        <th>Length</th>
+                                        <th>Text</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-bind="foreach: parsed_data">
+                                    <tr>
+                                        <td data-bind="text: encoding"></td>
+                                        <td data-bind="text: length"></td>
+                                        <td data-bind="text: text"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Codeword Details</h4>
+                            <table class="table">
+                                <thead>
+                                    <tr>   
+                                        <th>Group</th>
+                                        <th>Block</th>
+                                        <th>Data</th>
+                                        <th>EC</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-bind="foreach: sorted_groups">
+                                    <tr>
+                                        <td data-bind="text: group"></td>
+                                        <td data-bind="text: block"></td>
+                                        <td data-bind="text: data"></td>
+                                        <td data-bind="text: ec"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>Errors</h4>
+                            <table class="table">
+                                <thead>
+                                    <tr>   
+                                        <th>Group</th>
+                                        <th>Block</th>
+                                        <th>Raw Ints</th>
+                                        <th>Corrected Ints</th>
+                                    </tr>
+                                </thead>
+                                <tbody data-bind="foreach: errors">
+                                    <tr>
+                                        <td data-bind="text: group"></td>
+                                        <td data-bind="text: block"></td>
+                                        <td data-bind="text: original_hex"></td>
+                                        <td data-bind="text: fixed_ints"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </body>
 

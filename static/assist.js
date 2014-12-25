@@ -1,6 +1,5 @@
 
-
-function createMaskButtons() {
+function createMaskButtons(qr) {
     for (var i=0; i < MASKS.length; i++) {
         var mask_el = document.createElement("button");
         var label = "mask"+i;
@@ -10,53 +9,29 @@ function createMaskButtons() {
             (function (mask) {
                 return function () {
                     qr.applyMask(MASKS[mask]);
+                    qr.onchange();
                 };
             })(i)
         );
         mask_el.innerHTML = label;
-        document.getElementById("body2").appendChild(mask_el);
+        document.getElementById("maskbuttons").appendChild(mask_el);
     }
 }
 
-function bitArrayToInts(bits) {
-    var bytes = [];
-    for (var i=0; i < bits.length; i++) {
-        bytes.push(parseInt(bits[i], 2));
-    }
-    return bytes;
-}
-
-function bitsToInts(bits) {
-    var bytes = [];
-    for (var i=0; i < bits.length; i += 8) {
-        var bit_chunk = bits.substr(i, 8);
-        bytes.push(parseInt(bit_chunk, 2));
-    }
-    return bytes;
-}
-
-function intArrayToString(ints) {
-    var string = "";
-    for (var i=0; i < ints.length; i++) {
-        string += String.fromCharCode(ints[i]);
-    }
-    return string;
-}
-
-function testErrors(reader) {
-    var ec_per_block = reader.qr.version.ec_table[reader.qr.ec].ec_per_block;
+function testErrors(sorter) {
+    var ec_per_block = sorter.qr.version.ec_table[sorter.qr.ec].ec_per_block;
     var rs = new ReedSolomon(ec_per_block);
     var errors = [];
-    for (var i=0; i < reader.grouped_codewords.length; i++) {
-        var data_group = reader.grouped_codewords[i];
-        var ec_group = reader.grouped_ec_codewords[i];
+    for (var i=0; i < sorter.grouped_codewords.length; i++) {
+        var data_group = sorter.grouped_codewords[i];
+        var ec_group = sorter.grouped_ec_codewords[i];
 
         for (var j=0; j < data_group.length; j++) {
             var data_block = data_group[j];
-            var data_ints = bitArrayToInts(data_block);
-            var data_str = intArrayToString(data_ints);
+            var data_ints = data_block.toIntArray();
+            var data_str = data_ints.intsToString();
 
-            var ec_ints = bitArrayToInts(ec_group[j]);
+            var ec_ints = ec_group[j].toIntArray();
 
             var check_data = data_ints.concat(ec_ints);
 
@@ -64,8 +39,11 @@ function testErrors(reader) {
             if (corrected_str != data_str) {
                 errors.push({
                     "group": i,
+                    "block": j,
                     "original": data_str,
-                    "fixed": corrected_str
+                    "original_hex": data_ints.toHexArray(),
+                    "fixed": corrected_str,
+                    "fixed_ints": corrected_str.toHexArray()
                 });
             }
         }
@@ -73,39 +51,72 @@ function testErrors(reader) {
     return errors;
 }
 
-function readAllData(qr) {
-    var sorter = new QRDataSorter(qr);
-    var parser = new QRDataParser(qr, sorter.joined_data_codewords);
-    var errors = testErrors(sorter);
-    console.log(errors);
+function AppViewModel(qr) {
+    var that = this;
+    this.qr = ko.observable(qr);
+    this.qr.subscribe(function (qr) {
+        that.qr_sorter(new QRDataSorter(qr));
+        that.qr_parser(new QRDataParser(qr, that.qr_sorter().joined_data_codewords));
+    })
 
-    // var joined_blocks = sorter.raw_codewords.join("");
-    // try {
-    //     var match = /^([01]+?)0+$/.exec(joined_blocks)[1];
-    // }
-    // catch (e) {
-    //     match = joined_blocks;
-    // }
-    // console.log(btoa(match));
+    this.qr_sorter = ko.observable(new QRDataSorter(qr));
+    this.qr_parser = ko.observable(new QRDataParser(qr, this.qr_sorter().joined_data_codewords));
 
-    var datas = [];
-    while (true) {
-        var qrdata = parser.readData();
-        if (!qrdata.encoding) {
-            break;
+    this.errors = ko.computed(function () {
+        var errors;
+        try {
+            errors = testErrors(this.qr_sorter());
         }
-        datas.push(qrdata);
-    }
-    return datas.map(function (e) { 
-        return e.text || "";
-    }).join("");
+        catch (e) {
+            console.log("myerror:", e);
+        }
+        return errors;
+    }, this);
+
+    this.sorted_groups = ko.computed(function () {
+        var group_data = [];
+        var data_groups = this.qr_sorter().grouped_codewords;
+        var ec_groups = this.qr_sorter().grouped_ec_codewords;
+        for (var i=0; i < data_groups.length; i++) {
+            var group_codewords = data_groups[i];
+            for (var j=0; j < group_codewords.length; j++) {
+                group_data.push({
+                    "group": i,
+                    "block": j,
+                    "data": group_codewords[j].toHexArray(),
+                    "ec": ec_groups[i][j].toHexArray()
+                });
+            }
+        }
+        return group_data;
+    }, this);
+
+    this.parsed_data = ko.computed(function () {
+        var datas = [];
+        while (true) {
+            var qrdata = this.qr_parser().readData();
+            if (!qrdata.encoding) {
+                break;
+            }
+            datas.push(qrdata);
+        }
+        return datas;
+    }, this);
 }
+
 
 function init () {
     var svg = d3.select("svg");
-    qr = new QRCode(svg, 3, "Q");
+    var qr = new QRCode(svg, 3, "Q");
+    var viewmodel = new AppViewModel(qr);
 
-    createMaskButtons();
+    qr.onchange = function () {
+        viewmodel.qr(qr);
+    };
+
+    ko.applyBindings(viewmodel);
+
+    createMaskButtons(qr);
 
     if (document.location.hash) {
         var hash = document.location.hash.substr(1);
@@ -114,8 +125,5 @@ function init () {
         qr_file.writeBits(data);
     } 
 
-    setTimeout(function () {
-        var all_data = readAllData(qr);
-        document.getElementById("qrbytes").innerHTML = all_data;
-    }, 5000);
+    qr.onchange();
 }

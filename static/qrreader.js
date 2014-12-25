@@ -142,7 +142,7 @@ QRDataSorter.prototype.readAllCodewords = function () {
 };
 
 QRDataSorter.prototype.groupDataCodewords = function () {
-    var ec_data = this.qr.version.ec_table[qr.ec];
+    var ec_data = this.qr.version.ec_table[this.qr.ec];
     
     var group_array = [].arrayFiller(ec_data.groups);
     for (var i=0; i < group_array.length; i++) {
@@ -161,7 +161,7 @@ QRDataSorter.prototype.groupDataCodewords = function () {
 }; 
 
 QRDataSorter.prototype.groupECCodewords = function () {
-    var ec_data = this.qr.version.ec_table[qr.ec];
+    var ec_data = this.qr.version.ec_table[this.qr.ec];
     
     var group_array = [].arrayFiller(ec_data.groups);
     for (var i=0; i < group_array.length; i++) {

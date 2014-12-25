@@ -1,14 +1,16 @@
 
-function QRCode (svg, version, ec) {
+function QRCode (svg, version, ec, changed) {
     this.svg = svg;
     this.version = VERSIONS[version];
     this.version_num = version;
     this.ec = ec;
+    this.onchange = changed;
     this.size = this.version.size;
     this.block_size = 20;
     this.spacing = 1;
     this.block_spacing = this.block_size + this.spacing;
     this.setup();
+    this.drawn = true;
 }
 
 QRCode.prototype.setup = function () {
@@ -61,6 +63,9 @@ QRCode.prototype.addRects = function() {
                 return;
             }
             that.mark(this, BLACK);
+            if (that.drawn && that.onchange) {
+                that.onchange();
+            }
         })
         // Right click to turn node off
         .on("contextmenu", function (d) {
@@ -69,6 +74,9 @@ QRCode.prototype.addRects = function() {
                 return;
             }
             that.mark(this, WHITE);
+            if (that.drawn && that.onchange) {
+                that.onchange();
+            }
             d3.event.preventDefault();
         })
         // Populate row->col->node mapping
