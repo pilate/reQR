@@ -52,7 +52,7 @@ function testErrors(sorter) {
 }
 
 function parseData (qr, data) {
-    var parser = new QRDataParser(qr, data)
+    var parser = new QRDataParser(qr, data);
 
     var datas = [];
     while (true) {
@@ -71,11 +71,21 @@ function AppViewModel(qr) {
     this.qr = ko.observable(qr);
     this.qr.subscribe(function (qr) {
         that.qr_sorter(new QRDataSorter(qr));
-        that.qr_parser(new QRDataParser(qr, that.qr_sorter().joined_data_codewords));
     });
 
     this.qr_sorter = ko.observable(new QRDataSorter(qr));
-    this.qr_parser = ko.observable(new QRDataParser(qr, this.qr_sorter().joined_data_codewords));
+
+    this.url = ko.pureComputed(function () {
+        var match;
+        var joined_blocks = this.qr_sorter().all_codewords.join("");
+        try {
+            match = /^([01]+?)0+$/.exec(joined_blocks)[1];
+        }
+        catch (e) {
+            match = joined_blocks;
+        }
+        return "#" + btoa(match);  
+    }, this);
 
     this.raw_data = ko.pureComputed(function () {
         var sorter = this.qr_sorter();
@@ -98,7 +108,7 @@ function AppViewModel(qr) {
     this.fixed_data = ko.pureComputed(function () {
         var sorter = this.qr_sorter();
         var errors = this.errors();
-        var copied_codewords = $.extend(true, [], sorter.grouped_codewords);
+        var copied_codewords = jQuery.extend(true, [], sorter.grouped_codewords);
         for (var i=0; i < errors.length; i++) {
             var error = errors[i];
             copied_codewords[error.group][error.block] = error.fixed.toBinArray();

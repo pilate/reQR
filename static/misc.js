@@ -64,9 +64,8 @@ String.prototype.toHexArray = function () {
 };
 
 String.prototype.pad = function (width, z) {
-    // console.log("pad", this, n, width);
+    var n = this.substr(0);
     z = z || '0';
-    n = this.substr(0);
     var newval = n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
-    return newval
+    return newval;
 };
