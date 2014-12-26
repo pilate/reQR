@@ -43,34 +43,212 @@ var ALIGNMENT = [
 var IGNORE_LABELS = ["dark", "timing", "finder", "alignment", "format"];
 
 var VERSIONS = {
+    1: {
+        "size": 21,
+        "alignments": [],
+    },
     2: {
         "size": 25,
         "alignments": [6, 18],
-        "timing_offset": 6,
-        "encoding_len_bits": {
-            1: 10,
-            2: 9,
-            4: 8,
-            8: 8
-        }
+        "encoding_len_bits": { 1: 10, 2: 9, 4: 8, 8: 8 },
     },
     3: {
         "size": 29,
         "alignments": [6, 22],
-        "timing_offset": 6,
-        "encoding_len_bits": {
-            1: 10,
-            2: 9,
-            4: 8,
-            8: 8
-        },
+        "encoding_len_bits": { 1: 10, 2: 9, 4: 8, 8: 8 },
         "ec_table": {
             "L": { "ec_per_block": 15, "groups": 1, "group_blocks": 1, "data_per_block": 55 },
             "M": { "ec_per_block": 26, "groups": 1, "group_blocks": 1, "data_per_block": 44 },
             "Q": { "ec_per_block": 18, "groups": 1, "group_blocks": 2, "data_per_block": 17 },
             "H": { "ec_per_block": 22, "groups": 1, "group_blocks": 2, "data_per_block": 13 },
         }
-    }
+    },
+    4: {
+        "size": 33,
+        "alignments": [6, 26],
+        "encoding_len_bits": { 1: 10, 2: 9, 4: 8, 8: 8 },
+    },
+    5: {
+        "size": 37,
+        "alignments": [6, 30],
+        "encoding_len_bits": { 1: 10, 2: 9, 4: 8, 8: 8 },
+    },
+    6: {
+        "size": 41,
+        "alignments": [6, 34],
+        "encoding_len_bits": { 1: 10, 2: 9, 4: 8, 8: 8 },
+    },
+    7: {
+        "size": 45,
+        "alignments": [6, 22, 38],
+        "encoding_len_bits": { 1: 10, 2: 9, 4: 8, 8: 8 },
+    },
+    8: {
+        "size": 49,
+        "alignments": [6, 24, 42],
+        "encoding_len_bits": { 1: 10, 2: 9, 4: 8, 8: 8 },
+    },
+    9: {
+        "size": 53,
+        "alignments": [6, 26, 46],
+        "encoding_len_bits": { 1: 10, 2: 9, 4: 8, 8: 8 },
+    },
+    10: {
+        "size": 57,
+        "alignments": [6, 28, 50],
+        "encoding_len_bits": { 1: 12, 2: 11, 4: 16, 8: 10 },
+    },
+    11: {
+        "size": 61,
+        "alignments": [6, 30, 54],
+        "encoding_len_bits": { 1: 12, 2: 11, 4: 16, 8: 10 },
+    },
+    12: {
+        "size": 65,
+        "alignments": [6, 32, 58],
+        "encoding_len_bits": { 1: 12, 2: 11, 4: 16, 8: 10 },
+    },
+    13: {
+        "size": 69,
+        "alignments": [6, 34, 62],
+        "encoding_len_bits": { 1: 12, 2: 11, 4: 16, 8: 10 },
+    },
+    14: {
+        "size": 73,
+        "alignments": [6, 26, 46, 66],
+        "encoding_len_bits": { 1: 12, 2: 11, 4: 16, 8: 10 },
+    },
+    15: {
+        "size": 77,
+        "alignments": [6, 26, 48, 70],
+        "encoding_len_bits": { 1: 12, 2: 11, 4: 16, 8: 10 },
+    },
+    16: {
+        "size": 81,
+        "alignments": [6, 26, 50, 74],
+        "encoding_len_bits": { 1: 12, 2: 11, 4: 16, 8: 10 },
+    },
+    17: {
+        "size": 85,
+        "alignments": [6, 30, 54, 78],
+        "encoding_len_bits": { 1: 12, 2: 11, 4: 16, 8: 10 },
+    },
+    18: {
+        "size": 89,
+        "alignments": [6, 30, 56, 82],
+        "encoding_len_bits": { 1: 12, 2: 11, 4: 16, 8: 10 },
+    },
+    19: {
+        "size": 93,
+        "alignments": [6, 30, 58, 86],
+        "encoding_len_bits": { 1: 12, 2: 11, 4: 16, 8: 10 },
+    },
+    20: {
+        "size": 97,
+        "alignments": [6, 34, 62, 90],
+        "encoding_len_bits": { 1: 12, 2: 11, 4: 16, 8: 10 },
+    },
+    21: {
+        "size": 101,
+        "alignments": [6, 28, 50, 72, 94],
+        "encoding_len_bits": { 1: 12, 2: 11, 4: 16, 8: 10 },
+    },
+    22: {
+        "size": 105,
+        "alignments": [6, 26, 50, 74, 98],
+        "encoding_len_bits": { 1: 12, 2: 11, 4: 16, 8: 10 },
+    },
+    23: {
+        "size": 109,
+        "alignments": [6, 30, 54, 78, 102],
+        "encoding_len_bits": { 1: 12, 2: 11, 4: 16, 8: 10 },
+    },
+    24: {
+        "size": 113,
+        "alignments": [6, 28, 54, 80, 106],
+        "encoding_len_bits": { 1: 12, 2: 11, 4: 16, 8: 10 },
+    },
+    25: {
+        "size": 117,
+        "alignments": [6, 32, 58, 84, 110],
+        "encoding_len_bits": { 1: 12, 2: 11, 4: 16, 8: 10 },
+    },
+    26: {
+        "size": 121,
+        "alignments": [6, 30, 58, 86, 114],
+        "encoding_len_bits": { 1: 12, 2: 11, 4: 16, 8: 10 },
+    },
+    27: {
+        "size": 125,
+        "alignments": [6, 34, 62, 90, 118],
+        "encoding_len_bits": { 1: 14, 2: 13, 4: 16, 8: 12 },
+    },
+    28: {
+        "size": 129,
+        "alignments": [6, 26, 50, 74, 98, 122],
+        "encoding_len_bits": { 1: 14, 2: 13, 4: 16, 8: 12 },
+    },
+    29: {
+        "size": 133,
+        "alignments": [6, 30, 54, 78, 102, 126],
+        "encoding_len_bits": { 1: 14, 2: 13, 4: 16, 8: 12 },
+    },
+    30: {
+        "size": 137,
+        "alignments": [6, 26, 52, 78, 104, 130],
+        "encoding_len_bits": { 1: 14, 2: 13, 4: 16, 8: 12 },
+    },
+    31: {
+        "size": 141,
+        "alignments": [6, 30, 56, 82, 108, 134],
+        "encoding_len_bits": { 1: 14, 2: 13, 4: 16, 8: 12 },
+    },
+    32: {
+        "size": 145,
+        "alignments": [6, 34, 60, 86, 112, 138],
+        "encoding_len_bits": { 1: 14, 2: 13, 4: 16, 8: 12 },
+    },
+    33: {
+        "size": 149,
+        "alignments": [6, 30, 58, 86, 114, 142],
+        "encoding_len_bits": { 1: 14, 2: 13, 4: 16, 8: 12 },
+    },
+    34: {
+        "size": 153,
+        "alignments": [6, 34, 62, 90, 118, 146],
+        "encoding_len_bits": { 1: 14, 2: 13, 4: 16, 8: 12 },
+    },
+    35: {
+        "size": 157,
+        "alignments": [6, 30, 54, 78, 102, 126, 150],
+        "encoding_len_bits": { 1: 14, 2: 13, 4: 16, 8: 12 },
+    },
+    36: {
+        "size": 161,
+        "alignments": [6, 24, 50, 76, 102, 128, 154],
+        "encoding_len_bits": { 1: 14, 2: 13, 4: 16, 8: 12 },
+    },
+    37: {
+        "size": 165,
+        "alignments": [6, 28, 54, 80, 106, 132, 158],
+        "encoding_len_bits": { 1: 14, 2: 13, 4: 16, 8: 12 },
+    },
+    38: {
+        "size": 169,
+        "alignments": [6, 32, 58, 84, 110, 136, 162],
+        "encoding_len_bits": { 1: 14, 2: 13, 4: 16, 8: 12 },
+    },
+    39: {
+        "size": 173,
+        "alignments": [6, 26, 54, 82, 110, 138, 166],
+        "encoding_len_bits": { 1: 14, 2: 13, 4: 16, 8: 12 },
+    },
+    40: {
+        "size": 177,
+        "alignments": [6, 30, 58, 86, 114, 142, 170],
+        "encoding_len_bits": { 1: 14, 2: 13, 4: 16, 8: 12 },
+    },
+
 };
 
 var MASKS = [

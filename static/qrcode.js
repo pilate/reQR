@@ -135,7 +135,7 @@ QRCode.prototype.drawFinders = function () {
 QRCode.prototype.drawTiming = function () {
     var that = this;
     this.svg.selectAll("rect").each(function (d) {
-        var timing_offset = that.version.timing_offset;
+        var timing_offset = 6;
         var test1 = (d.row == timing_offset) && (d.col > timing_offset) && (d.col < (that.size - timing_offset));
         var test2 = (d.col == timing_offset) && (d.row > timing_offset) && (d.row < (that.size - timing_offset));
         if (test1 || test2) {
