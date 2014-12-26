@@ -71,16 +71,15 @@ function AppViewModel() {
 
     // User settings
     this.qr_version = ko.observable(3);
-    this.ec_level = ko.observable(3);
+    this.ec_level = ko.observable("Q");
 
     this.qr_sorter = ko.observable();
 
     // Track QR code, update sorter when it changes
     this.qr = ko.computed(function () {
-        console.log("x", this.qr_version());
         var svg = d3.select("svg");
         svg.selectAll("*").remove();
-        var qr = new QRCode(svg, +this.qr_version(), "Q", function () {
+        var qr = new QRCode(svg, +this.qr_version(), this.ec_level(), function () {
             that.qr_sorter(new QRDataSorter(that.qr()));
         });
 
@@ -90,11 +89,9 @@ function AppViewModel() {
             var qr_file = new QRFile(qr);
             qr_file.writeBits(data);
         } 
-
+        that.qr_sorter(new QRDataSorter(qr));
         return qr;
     }, this);
-
-    this.qr().onchange();
 
     // Generate hash to redraw qr code
     this.url = ko.pureComputed(function () {

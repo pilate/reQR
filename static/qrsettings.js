@@ -54,11 +54,24 @@ var VERSIONS = {
     1: {
         "size": 21,
         "alignments": [],
+        "encoding_len_bits": { 1: 10, 2: 9, 4: 8, 8: 8 },
+        "ec_table": {
+            "L": { "ec_per_block": 7, "groups": 1, "group_blocks": 1, "data_per_block": 19 },
+            "M": { "ec_per_block": 10, "groups": 1, "group_blocks": 1, "data_per_block": 16 },
+            "Q": { "ec_per_block": 13, "groups": 1, "group_blocks": 1, "data_per_block": 13 },
+            "H": { "ec_per_block": 17, "groups": 1, "group_blocks": 1, "data_per_block": 9 },
+        }
     },
     2: {
         "size": 25,
         "alignments": [6, 18],
         "encoding_len_bits": { 1: 10, 2: 9, 4: 8, 8: 8 },
+        "ec_table": {
+            "L": { "ec_per_block": 10, "groups": 1, "group_blocks": 1, "data_per_block": 34 },
+            "M": { "ec_per_block": 16, "groups": 1, "group_blocks": 1, "data_per_block": 28 },
+            "Q": { "ec_per_block": 22, "groups": 1, "group_blocks": 1, "data_per_block": 22 },
+            "H": { "ec_per_block": 28, "groups": 1, "group_blocks": 1, "data_per_block": 16 },
+        }
     },
     3: {
         "size": 29,
@@ -75,11 +88,20 @@ var VERSIONS = {
         "size": 33,
         "alignments": [6, 26],
         "encoding_len_bits": { 1: 10, 2: 9, 4: 8, 8: 8 },
+        "ec_table": {
+            "L": { "ec_per_block": 20, "groups": 1, "group_blocks": 1, "data_per_block": 80 },
+            "M": { "ec_per_block": 18, "groups": 1, "group_blocks": 1, "data_per_block": 32 },
+            "Q": { "ec_per_block": 26, "groups": 1, "group_blocks": 1, "data_per_block": 24 },
+            "H": { "ec_per_block": 16, "groups": 1, "group_blocks": 1, "data_per_block": 9 },
+        }
     },
     5: {
         "size": 37,
         "alignments": [6, 30],
         "encoding_len_bits": { 1: 10, 2: 9, 4: 8, 8: 8 },
+        "ec_table": {
+            
+        }
     },
     6: {
         "size": 41,
