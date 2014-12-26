@@ -66,20 +66,35 @@ function parseData (qr, data) {
 
 }
 
-function AppViewModel(qr) {
+function AppViewModel() {
     var that = this;
 
     // User settings
     this.qr_version = ko.observable(3);
-    this.ec_level = ko.observable();
+    this.ec_level = ko.observable(3);
+
+    this.qr_sorter = ko.observable();
 
     // Track QR code, update sorter when it changes
-    this.qr = ko.observable(qr);
-    this.qr_sorter = ko.observable(new QRDataSorter(qr));
+    this.qr = ko.computed(function () {
+        console.log("x", this.qr_version());
+        var svg = d3.select("svg");
+        svg.selectAll("*").remove();
+        var qr = new QRCode(svg, +this.qr_version(), "Q", function () {
+            that.qr_sorter(new QRDataSorter(that.qr()));
+        });
 
-    this.qr.subscribe(function (qr) {
-        that.qr_sorter(new QRDataSorter(qr));
-    });
+        if (document.location.hash) {
+            var hash = document.location.hash.substr(1);
+            var data = atob(hash);
+            var qr_file = new QRFile(qr);
+            qr_file.writeBits(data);
+        } 
+
+        return qr;
+    }, this);
+
+    this.qr().onchange();
 
     // Generate hash to redraw qr code
     this.url = ko.pureComputed(function () {
@@ -158,24 +173,8 @@ function AppViewModel(qr) {
 
 
 function init () {
-    var svg = d3.select("svg");
-    var qr = new QRCode(svg, 3, "Q");
-    var viewmodel = new AppViewModel(qr);
-
-    qr.onchange = function () {
-        viewmodel.qr(qr);
-    };
-
+    var viewmodel = new AppViewModel();
     ko.applyBindings(viewmodel);
 
-    createMaskButtons(qr);
-
-    if (document.location.hash) {
-        var hash = document.location.hash.substr(1);
-        var data = atob(hash);
-        var qr_file = new QRFile(qr);
-        qr_file.writeBits(data);
-    } 
-
-    qr.onchange();
+    createMaskButtons(viewmodel.qr());
 }
