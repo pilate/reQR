@@ -1,3 +1,4 @@
+var max_width = 650;
 
 function QRCode (svg, version, ec, changed) {
     this.svg = svg;
@@ -7,8 +8,6 @@ function QRCode (svg, version, ec, changed) {
     this.onchange = changed;
     this.size = this.version.size;
     this.block_size = 20;
-    this.spacing = 1;
-    this.block_spacing = this.block_size + this.spacing;
     this.setup();
     this.drawn = true;
 }
@@ -23,12 +22,20 @@ QRCode.prototype.setup = function () {
     this.offset_map = new [].arrayFiller(this.size);
 
     this.data = this.getData();
+    this.calcSize();
     this.addRects();
     this.drawFinders();
+    this.drawAlignments();
     this.drawTiming();
     this.drawDark();
-    this.drawAlignments();
     this.drawFormatInfo();
+};
+
+QRCode.prototype.calcSize = function () {
+    this.spacing = 1;
+    var non_spacing_pixels = max_width - (this.spacing * (this.size + 1));
+    this.block_size = Math.floor(non_spacing_pixels / this.size)
+    this.block_spacing = this.block_size + this.spacing;
 };
 
 // Creates the base data for d3, makes (size * size) elements with defined coordinates

@@ -68,6 +68,10 @@ function parseData (qr, data) {
 
 function AppViewModel(qr) {
     var that = this;
+
+    this.qr_version = ko.observable(3);
+    this.ec_level = ko.observable();
+
     this.qr = ko.observable(qr);
     this.qr.subscribe(function (qr) {
         that.qr_sorter(new QRDataSorter(qr));

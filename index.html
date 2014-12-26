@@ -22,9 +22,27 @@
         </nav>
 
         <div class="container">
-            <svg width="610" height="610" id="svg" class="center-block"></svg>
+            <svg width="650" height="650" id="svg" class="center-block"></svg>
 
             <div id="maskbuttons"></div>
+
+            <div class="panel panel-default">
+                <div class="panel-heading">Settings</div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <select class="form-control" data-bind="foreach: {data: Object.keys(VERSIONS), as: 'version'}, value: qr_version">
+                                <option data-bind="text: 'Version ' + version, value: version"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <select class="form-control" data-bind="foreach: {data: Object.keys(EC_LEVELS), as: 'level'}, value: ec_level">
+                                <option data-bind="text: level, value: EC_LEVELS[level]"></option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <div class="panel panel-default">
                 <div class="panel-heading">URL</div>
@@ -36,7 +54,6 @@
                     </div>
                 </div>
             </div>
-
 
             <div class="row">
                 <div class="col-md-6">
