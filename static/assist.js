@@ -69,16 +69,19 @@ function parseData (qr, data) {
 function AppViewModel(qr) {
     var that = this;
 
+    // User settings
     this.qr_version = ko.observable(3);
     this.ec_level = ko.observable();
 
+    // Track QR code, update sorter when it changes
     this.qr = ko.observable(qr);
+    this.qr_sorter = ko.observable(new QRDataSorter(qr));
+
     this.qr.subscribe(function (qr) {
         that.qr_sorter(new QRDataSorter(qr));
     });
 
-    this.qr_sorter = ko.observable(new QRDataSorter(qr));
-
+    // Generate hash to redraw qr code
     this.url = ko.pureComputed(function () {
         var match;
         var joined_blocks = this.qr_sorter().all_codewords.join("");
@@ -91,11 +94,18 @@ function AppViewModel(qr) {
         return "#" + btoa(match);  
     }, this);
 
+    // Read the raw data from the QR code
     this.raw_data = ko.pureComputed(function () {
         var sorter = this.qr_sorter();
         return sorter.joinGroupedCodewords(sorter.grouped_codewords);
     }, this);
 
+    // Parsed raw data
+    this.parsed_data = ko.computed(function () {
+        return parseData(this.qr(), this.raw_data());
+    }, this);
+
+    // Find any errors in the raw QR data
     this.errors = ko.computed(function () {
         var errors = [];
         try {
@@ -109,6 +119,7 @@ function AppViewModel(qr) {
         return errors;
     }, this);
 
+    // Generate new data applying error correction
     this.fixed_data = ko.pureComputed(function () {
         var sorter = this.qr_sorter();
         var errors = this.errors();
@@ -120,6 +131,12 @@ function AppViewModel(qr) {
         return sorter.joinGroupedCodewords(copied_codewords);
     }, this);
 
+    // Parse QR data with error correction applied
+    this.parsed_fixed_data = ko.computed(function () {
+        return parseData(this.qr(), this.fixed_data());
+    }, this);
+
+    // Create array of data for human consumption
     this.sorted_groups = ko.computed(function () {
         var group_data = [];
         var data_groups = this.qr_sorter().grouped_codewords;
@@ -136,14 +153,6 @@ function AppViewModel(qr) {
             }
         }
         return group_data;
-    }, this);
-
-    this.parsed_data = ko.computed(function () {
-        return parseData(this.qr(), this.raw_data());
-    }, this);
-
-    this.parsed_fixed_data = ko.computed(function () {
-        return parseData(this.qr(), this.fixed_data());
     }, this);
 }
 
