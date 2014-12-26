@@ -119,12 +119,16 @@ QRDataSorter.prototype.setup = function () {
     this.all_codewords = this.readAllCodewords(); 
     this.grouped_codewords = this.groupDataCodewords();
     this.grouped_ec_codewords = this.groupECCodewords();
-    this.joined_data_codewords = this.grouped_codewords.map(function (group) {
+    this.joined_data_codewords = this.joinGroupedCodewords(this.grouped_codewords);
+    this.data_file = new StringFile(this.joined_data_codewords);
+};
+
+QRDataSorter.prototype.joinGroupedCodewords = function (codewords) {
+    return codewords.map(function (group) {
         return group.map(function (block) {
             return block.join("");
         }).join("");
     }).join("");
-    this.data_file = new StringFile(this.joined_data_codewords);
 };
 
 // Reads the whole QR code 8 bits at a time 

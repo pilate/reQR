@@ -44,6 +44,16 @@ String.prototype.toIntArray = function () {
     return ints;
 };
 
+String.prototype.toBinArray = function () {
+    var bits = [];
+    for (var i=0; i < this.length; i++) {
+        var char_code = String.charCodeAt(this[i]);
+        var bin_code = char_code.toString(2).pad(8, "0");
+        bits.push(bin_code);
+    }
+    return bits;
+};
+
 String.prototype.toHexArray = function () {
     var hexs = [];
     for (var i=0; i < this.length; i++) {
@@ -53,8 +63,10 @@ String.prototype.toHexArray = function () {
     return hexs;
 };
 
-function pad (n, width, z) {
-  z = z || '0';
-  n = n + '';
-  return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
-}
+String.prototype.pad = function (width, z) {
+    // console.log("pad", this, n, width);
+    z = z || '0';
+    n = this.substr(0);
+    var newval = n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+    return newval
+};

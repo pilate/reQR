@@ -51,26 +51,59 @@ function testErrors(sorter) {
     return errors;
 }
 
+function parseData (qr, data) {
+    var parser = new QRDataParser(qr, data)
+
+    var datas = [];
+    while (true) {
+        var qrdata = parser.readData();
+        if (!qrdata.encoding) {
+            break;
+        }
+        datas.push(qrdata);
+    }
+    return datas;
+
+}
+
 function AppViewModel(qr) {
     var that = this;
     this.qr = ko.observable(qr);
     this.qr.subscribe(function (qr) {
         that.qr_sorter(new QRDataSorter(qr));
         that.qr_parser(new QRDataParser(qr, that.qr_sorter().joined_data_codewords));
-    })
+    });
 
     this.qr_sorter = ko.observable(new QRDataSorter(qr));
     this.qr_parser = ko.observable(new QRDataParser(qr, this.qr_sorter().joined_data_codewords));
 
+    this.raw_data = ko.pureComputed(function () {
+        var sorter = this.qr_sorter();
+        return sorter.joinGroupedCodewords(sorter.grouped_codewords);
+    }, this);
+
     this.errors = ko.computed(function () {
-        var errors;
+        var errors = [];
         try {
             errors = testErrors(this.qr_sorter());
         }
         catch (e) {
-            console.log("myerror:", e);
+            if (e != "Could not locate error") {
+                console.log("error:", e);
+            }
         }
         return errors;
+    }, this);
+
+    this.fixed_data = ko.pureComputed(function () {
+        var sorter = this.qr_sorter();
+        var errors = this.errors();
+        var copied_codewords = $.extend(true, [], sorter.grouped_codewords);
+        for (var i=0; i < errors.length; i++) {
+            var error = errors[i];
+            copied_codewords[error.group][error.block] = error.fixed.toBinArray();
+        }
+        return sorter.joinGroupedCodewords(copied_codewords);
     }, this);
 
     this.sorted_groups = ko.computed(function () {
@@ -92,15 +125,11 @@ function AppViewModel(qr) {
     }, this);
 
     this.parsed_data = ko.computed(function () {
-        var datas = [];
-        while (true) {
-            var qrdata = this.qr_parser().readData();
-            if (!qrdata.encoding) {
-                break;
-            }
-            datas.push(qrdata);
-        }
-        return datas;
+        return parseData(this.qr(), this.raw_data());
+    }, this);
+
+    this.parsed_fixed_data = ko.computed(function () {
+        return parseData(this.qr(), this.fixed_data());
     }, this);
 }
 
