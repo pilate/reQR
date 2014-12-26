@@ -85,9 +85,10 @@ function AppViewModel() {
 
         if (document.location.hash) {
             var hash = document.location.hash.substr(1);
-            var data = atob(hash);
+            var data = Base64.decode(hash);
+            var bin_array = data.toBinArray();
             var qr_file = new QRFile(qr);
-            qr_file.writeBits(data);
+            qr_file.writeBits(bin_array.join(""));
         } 
         that.qr_sorter(new QRDataSorter(qr));
         return qr;
@@ -96,14 +97,10 @@ function AppViewModel() {
     // Generate hash to redraw qr code
     this.url = ko.pureComputed(function () {
         var match;
-        var joined_blocks = this.qr_sorter().all_codewords.join("");
-        try {
-            match = /^([01]+?)0+$/.exec(joined_blocks)[1];
-        }
-        catch (e) {
-            match = joined_blocks;
-        }
-        return "#" + btoa(match);  
+        var codewords = this.qr_sorter().all_codewords;
+        var codeword_ints = codewords.toIntArray();
+        var codeword_str = codeword_ints.intsToString();
+        return "#" + encodeURIComponent(Base64.encode(codeword_str)); 
     }, this);
 
     // Read the raw data from the QR code
