@@ -53,10 +53,12 @@ QRCode.prototype.addRects = function() {
         .selectAll("rect")
         .data(this.data).enter()
         .append("rect")
-        .attr("x", function(d) { return d.col * that.block_spacing + 1; })
-        .attr("y", function(d) { return d.row * that.block_spacing + 1; })
-        .attr("width", this.block_size)
-        .attr("height", this.block_size)
+        .attr({
+            "x": function(d) { return d.col * that.block_spacing + 1; },
+            "y": function(d) { return d.row * that.block_spacing + 1; },
+            "width": this.block_size,
+            "height": this.block_size,
+        })
         // Left click to turn node on
         .on("click", function (d) {
             if (IGNORE_LABELS.indexOf(d.label) !== -1) {

@@ -16,6 +16,14 @@ var ENCODINGS = {
     8: "kanji",
     9: "fnc1 in second"
 };
+
+var EC_LEVELS = {
+    "L": 1,
+    "M": 0,
+    "Q": 3,
+    "H": 2
+};
+
 var ALPHA = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
 
 // Finder code square
