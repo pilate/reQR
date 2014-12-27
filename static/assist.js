@@ -85,7 +85,7 @@ function AppViewModel() {
 
         if (document.location.hash) {
             var hash = document.location.hash.substr(1);
-            var data = Base64.decode(hash);
+            var data = Base64.decode(decodeURIComponent(hash));
             var bin_array = data.toBinArray();
             var qr_file = new QRFile(qr);
             qr_file.writeBits(bin_array.join(""));

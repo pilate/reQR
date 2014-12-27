@@ -47,7 +47,7 @@ String.prototype.toIntArray = function () {
 String.prototype.toBinArray = function () {
     var bits = [];
     for (var i=0; i < this.length; i++) {
-        var char_code = String.charCodeAt(this[i]);
+        var char_code = this.charCodeAt(i);
         var bin_code = char_code.toString(2).pad(8, "0");
         bits.push(bin_code);
     }
