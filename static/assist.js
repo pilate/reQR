@@ -18,6 +18,18 @@ function createMaskButtons(qr) {
     }
 }
 
+function getHashParams () {
+    var params = {};
+    var hash = document.location.hash.substr(1);
+    var split_hash = hash.split("&");
+    for (var i=0; i < split_hash.length; i++) {
+        var split_param = split_hash[i].split("=");
+        params[split_param[0]] = split_param[1];
+    }
+
+    return params;
+}
+
 function testErrors(sorter) {
     var ec_per_block = sorter.qr.version.ec_table[sorter.qr.ec].ec_per_block;
     var rs = new ReedSolomon(ec_per_block);
@@ -34,8 +46,16 @@ function testErrors(sorter) {
             var ec_ints = ec_group[j].toIntArray();
 
             var check_data = data_ints.concat(ec_ints);
+            for (var k=0; k < check_data.length; k++) {
+                if (check_data[k] === 0) {
+                    check_data[k] = -1;
+                }
+            }
 
-            var corrected_str = rs.decode(check_data);
+            try {
+                var corrected_str = rs.decode(check_data);
+            } 
+            catch (e) { continue; }
             if (corrected_str != data_str) {
                 errors.push({
                     "group": i,
@@ -68,6 +88,7 @@ function parseData (qr, data) {
 
 function AppViewModel() {
     var that = this;
+    this.loaded = false;
 
     // User settings
     this.qr_version = ko.observable(3);
@@ -84,8 +105,14 @@ function AppViewModel() {
         });
 
         if (document.location.hash) {
-            var hash = document.location.hash.substr(1);
-            var data = Base64.decode(decodeURIComponent(hash));
+            var params = getHashParams();
+            if (!this.loaded) {
+                if (params.v) this.qr_version(+params.v);
+                if (params.ec) this.ec_level(params.ec);
+                this.loaded = true;
+            }
+            
+            var data = Base64.decode(decodeURIComponent(params.data));
             var bin_array = data.toBinArray();
             var qr_file = new QRFile(qr);
             qr_file.writeBits(bin_array.join(""));
@@ -97,10 +124,13 @@ function AppViewModel() {
     // Generate hash to redraw qr code
     this.url = ko.pureComputed(function () {
         var match;
+        var url = "";
         var codewords = this.qr_sorter().all_codewords;
         var codeword_ints = codewords.toIntArray();
         var codeword_str = codeword_ints.intsToString();
-        return "#" + encodeURIComponent(Base64.encode(codeword_str)); 
+        var data = encodeURIComponent(Base64.encode(codeword_str));
+        url += ["data=" + data, "v=" + this.qr_version(), "ec=" + this.ec_level()].join("&");
+        return "#" + url;
     }, this);
 
     // Read the raw data from the QR code
