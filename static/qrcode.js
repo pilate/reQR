@@ -137,20 +137,26 @@ QRCode.prototype.drawFinders = function () {
 // Draw the horizontal and vertical timing markers
 // These are placed between the inner corners of finder patterns, with every other node being set
 QRCode.prototype.drawTiming = function () {
-    var that = this;
-    this.svg.selectAll("rect").each(function (d) {
-        var timing_offset = 6;
-        var test1 = (d.row == timing_offset) && (d.col > timing_offset) && (d.col < (that.size - timing_offset));
-        var test2 = (d.col == timing_offset) && (d.row > timing_offset) && (d.row < (that.size - timing_offset));
-        if (test1 || test2) {
-            if ((d.col + d.row) % 2) {
-                that.mark(this, WHITE, "timing");
-            }
-            else {
-                that.mark(this, BLACK, "timing");
-            }
+    // Draw horizontal timing pattern
+    for (var i=0; i < this.size; i++) {
+        var node = this.offset_map[6][i];
+        var node_data = d3.select(node).data()[0];
+        if (node_data.label) {
+            continue;
         }
-    });
+        var color = i % 2 ? WHITE : BLACK;
+        this.mark(node, color, "timing");
+    }
+    // Vertical timing pattern
+    for (var j=0; j < this.size; j++) {
+        var node = this.offset_map[j][6];
+        var node_data = d3.select(node).data()[0];
+        if (node_data.label) {
+            continue;
+        }
+        var color = j % 2 ? WHITE : BLACK;
+        this.mark(node, color, "timing");
+    }
 };
 
 // "Every QR code must have a dark pixel, also known as a dark module, at the coordinates (8, 4*version + 9)."
