@@ -165,16 +165,17 @@ QRCode.prototype.drawDark = function () {
 // For [10,20] this would be (10, 10), (10, 20), (20, 10), (20, 20)
 // Don't draw a pattern if the node is already labeled
 QRCode.prototype.drawAlignments = function () {
-    var that = this;
     var alignments = this.version.alignments;
-    this.svg.selectAll("rect").each(function (d) {
-        if ((alignments.indexOf(d.row) !== -1) && (alignments.indexOf(d.col) !== -1)) {
-            if (d.label) {
-                return;
+    for (var i = 0; i < alignments.length; i++) {
+        for (var j = 0; j < alignments.length; j++) {
+            var node = this.offset_map[alignments[i]][alignments[j]];
+            var node_data = d3.select(node).data()[0];
+            if (node_data.label) {
+                continue;
             }
-            that.drawPixels(ALIGNMENT, [d.row - 2, d.col - 2], "alignment");
+            this.drawPixels(ALIGNMENT, [node_data.row - 2, node_data.col - 2], "alignment");
         }
-    });
+    }
 };
 
 // Applies a mask function to the mutable nodes
