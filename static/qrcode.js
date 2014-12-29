@@ -155,7 +155,7 @@ QRCode.prototype.drawTiming = function () {
 
 // "Every QR code must have a dark pixel, also known as a dark module, at the coordinates (8, 4*version + 9)."
 QRCode.prototype.drawDark = function () {
-    var node = this.offset_map[4 * that.version_num + 9][8];
+    var node = this.offset_map[4 * this.version_num + 9][8];
     this.mark(node, BLACK, "dark");
 };
 
