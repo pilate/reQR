@@ -2,8 +2,8 @@
 var UP = 0;
 var DOWN = 1;
 
-var WHITE = d3.rgb(255, 255, 255);
-var BLACK = d3.rgb(0, 0, 0);
+var WHITE = d3.rgb(255, 255, 255).toString();
+var BLACK = d3.rgb(0, 0, 0).toString();
 
 var ENCODINGS = {
     0: "end",

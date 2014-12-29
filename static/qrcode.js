@@ -109,27 +109,22 @@ QRCode.prototype.mark = function (node, color, label) {
 
 // Takes a pattern of bits and draws them at the provided offset
 QRCode.prototype.drawPixels = function (pattern, offset, label) {
-    var that = this;
-    this.svg.selectAll("rect").each(function (d) {
-        // Subtract offset from current node
-        var new_row = d.row - offset[0];
-        var new_col = d.col - offset[1];
-
-        // Check if our current offset exists in the pattern
-        var val;
-        try {
-            val = pattern[new_row][new_col];
+    for (var row = 0; row < pattern.length; row++) {
+        var pattern_line = pattern[row];
+        for (var col = 0; col < pattern_line.length; col++) {
+            var val = pattern_line[col];
+            var node;
+            try {
+                node = this.offset_map[row + offset[0]][col + offset[1]];
+            }
+            catch (e) {}
+            if (node === undefined) {
+                continue;
+            }
+            var fill_color = val ? BLACK : WHITE;
+            this.mark(node, fill_color, label);
         }
-        // If not, leave it alone
-        catch (e) {
-            return;
-        }
-        if (val === undefined) {
-            return;
-        }
-        var fill_color = val ? BLACK : WHITE;
-        that.mark(this, fill_color, label);
-    });
+    }
 };
 
 // Draws the finder patterns in three corners
@@ -160,12 +155,8 @@ QRCode.prototype.drawTiming = function () {
 
 // "Every QR code must have a dark pixel, also known as a dark module, at the coordinates (8, 4*version + 9)."
 QRCode.prototype.drawDark = function () {
-    var that = this;
-    this.svg.selectAll("rect").each(function (d) {
-        if ((d.col == 8) && (d.row == (4 * that.version_num + 9))) {
-            that.mark(this, BLACK, "dark");
-        }
-    });
+    var node = this.offset_map[4 * that.version_num + 9][8];
+    this.mark(node, BLACK, "dark");
 };
 
 // Draws the smaller alignment patterns
