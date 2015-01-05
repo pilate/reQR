@@ -19,7 +19,7 @@ QRFile.prototype.next = function (callback) {
 
         // Every other row, read col-1
         if (this.read_prev_col) {
-            node = this.qr.offset_map[this.col - 1][this.row];
+            node = this.qr.offset_map[this.row][this.col - 1];
 
             if (this.direction === UP) {
                 if (this.row === 0) {
@@ -46,7 +46,7 @@ QRFile.prototype.next = function (callback) {
             }
         }
         else {
-            node = this.qr.offset_map[this.col][this.row];
+            node = this.qr.offset_map[this.row][this.col];
         }
         
         // Go back to the other column
