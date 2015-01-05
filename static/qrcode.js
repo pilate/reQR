@@ -8,16 +8,21 @@ QR.QRCode = function (svg, version, ec, changed) {
     this.version = VERSIONS[version];
     this.ec = ec;
     this.size = this.version.size;
+
     this.setup();
+
     this.onchange = changed;
 }
 
 QR.QRCode.prototype.setup = function () {
     this.svg
-        .style("fill", "white")
-        .style("stroke", "grey");
+        .style({
+            "fill": "white",
+            "stroke": "grey"
+        });
 
     this.format_nodes = [].arrayFiller(15);
+
     // Create array for row->col->node lookups
     this.offset_map = new [].arrayFiller(this.size);
 
@@ -52,14 +57,6 @@ QR.QRCode.prototype.getData = function () {
     return cell_data;
 };
 
-QR.QRCode.prototype.changed = function() {
-    if (this.onchange) {
-        this.onchange();
-    }
-};
-
-QR.QRCode.prototype.getNodeData 
-
 // Sets up the clean grid of squares
 QR.QRCode.prototype.addRects = function() {
     var that = this;
@@ -78,8 +75,11 @@ QR.QRCode.prototype.addRects = function() {
             if (IGNORE_LABELS.indexOf(d.label) !== -1) {
                 return;
             }
-            that.mark(this, BLACK);
-            that.changed();
+            var color = d.val ? WHITE : BLACK;
+            that.mark(this, color);
+            if (that.onchange) {
+                that.onchange();
+            }
         })
         // Populate row->col->node mapping
         .each(function (d) {
@@ -92,9 +92,9 @@ QR.QRCode.prototype.mark = function (node, color, label) {
     var d3_node = d3.select(node);
     var data = QR.util.getNodeData(node);
     d3_node.style("fill", color);
-    data.val = color == WHITE ? 0 : 1;
+    data.val = Number(color != WHITE);
 
-    if (label && (!data.label)) {
+    if (label) {
         d3_node.attr("class", label);
         data.label = label;
     }
