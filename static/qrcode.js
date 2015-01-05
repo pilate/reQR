@@ -81,15 +81,6 @@ QR.QRCode.prototype.addRects = function() {
             that.mark(this, BLACK);
             that.changed();
         })
-        // Right click to turn node off
-        .on("contextmenu", function (d) {
-            d3.event.preventDefault();
-            if (IGNORE_LABELS.indexOf(d.label) !== -1) {
-                return;
-            }
-            that.mark(this, WHITE);
-            that.changed();
-        })
         // Populate row->col->node mapping
         .each(function (d) {
             that.offset_map[d.row][d.col] = this;
@@ -141,24 +132,17 @@ QR.QRCode.prototype.drawFinders = function () {
 QR.QRCode.prototype.drawTiming = function () {
     // Draw horizontal timing pattern
     for (var i=0; i < this.size; i++) {
-        var node = this.offset_map[6][i];
-        var node_data = QR.util.getNodeData(node);
-        if (node_data.label) {
-            continue;
-        }
         var color = i % 2 ? WHITE : BLACK;
-        this.mark(node, color, "timing");
-    }
+        var nodes = [
+            this.offset_map[6][i],
+            this.offset_map[i][6]
+        ];
 
-    // Vertical timing pattern
-    for (var j=0; j < this.size; j++) {
-        var node = this.offset_map[j][6];
-        var node_data = QR.util.getNodeData(node);
-        if (node_data.label) {
-            continue;
-        }
-        var color = j % 2 ? WHITE : BLACK;
-        this.mark(node, color, "timing");
+        nodes.forEach(function (node) {
+            if (!QR.util.getNodeData(node).label) {
+                this.mark(node, color, "timing");
+            }
+        }, this);
     }
 };
 
@@ -175,16 +159,16 @@ QR.QRCode.prototype.drawDark = function () {
 // Don't draw a pattern if the node is already labeled
 QR.QRCode.prototype.drawAlignments = function () {
     var alignments = this.version.alignments;
-    for (var i = 0; i < alignments.length; i++) {
-        for (var j = 0; j < alignments.length; j++) {
-            var node = this.offset_map[alignments[i]][alignments[j]];
+    this.version.alignments.forEach(function (row_align) {
+        this.version.alignments.forEach(function (col_align) { 
+            var node = this.offset_map[col_align][row_align];
             var node_data = QR.util.getNodeData(node);
             if (node_data.label) {
-                continue;
+                return;
             }
             this.drawPixels(ALIGNMENT, [node_data.row - 2, node_data.col - 2], "alignment");
-        }
-    }
+        }, this);
+    }, this);
 };
 
 // Applies a mask function to the mutable nodes
