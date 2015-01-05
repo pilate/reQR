@@ -1,18 +1,18 @@
 var max_width = 650;
 
-function QRCode (svg, version, ec, changed) {
+window.QR = {};
+
+QR.QRCode = function (svg, version, ec, changed) {
     this.svg = svg;
-    this.version = VERSIONS[version];
     this.version_num = version;
+    this.version = VERSIONS[version];
     this.ec = ec;
-    this.onchange = changed;
     this.size = this.version.size;
-    this.block_size = 20;
     this.setup();
-    this.drawn = true;
+    this.onchange = changed;
 }
 
-QRCode.prototype.setup = function () {
+QR.QRCode.prototype.setup = function () {
     this.svg
         .style("fill", "white")
         .style("stroke", "grey");
@@ -21,7 +21,6 @@ QRCode.prototype.setup = function () {
     // Create array for row->col->node lookups
     this.offset_map = new [].arrayFiller(this.size);
 
-    this.data = this.getData();
     this.calcSize();
     this.addRects();
     this.drawFinders();
@@ -31,7 +30,7 @@ QRCode.prototype.setup = function () {
     this.drawFormatInfo();
 };
 
-QRCode.prototype.calcSize = function () {
+QR.QRCode.prototype.calcSize = function () {
     this.spacing = 1;
     var non_spacing_pixels = max_width - (this.spacing * (this.size + 1));
     this.block_size = Math.floor(non_spacing_pixels / this.size)
@@ -39,7 +38,7 @@ QRCode.prototype.calcSize = function () {
 };
 
 // Creates the base data for d3, makes (size * size) elements with defined coordinates
-QRCode.prototype.getData = function () {
+QR.QRCode.prototype.getData = function () {
     var cell_data = [];
     for (var i=0; i < this.size; i++) {
         for (var j=0; j < this.size; j++) {
@@ -53,12 +52,20 @@ QRCode.prototype.getData = function () {
     return cell_data;
 };
 
+QR.QRCode.prototype.changed = function() {
+    if (this.onchange) {
+        this.onchange();
+    }
+};
+
+QR.QRCode.prototype.getNodeData 
+
 // Sets up the clean grid of squares
-QRCode.prototype.addRects = function() {
+QR.QRCode.prototype.addRects = function() {
     var that = this;
     this.svg
         .selectAll("rect")
-        .data(this.data).enter()
+        .data(this.getData()).enter()
         .append("rect")
         .attr({
             "x": function(d) { return d.col * that.block_spacing + 1; },
@@ -72,21 +79,16 @@ QRCode.prototype.addRects = function() {
                 return;
             }
             that.mark(this, BLACK);
-            if (that.drawn && that.onchange) {
-                that.onchange();
-            }
+            that.changed();
         })
         // Right click to turn node off
         .on("contextmenu", function (d) {
+            d3.event.preventDefault();
             if (IGNORE_LABELS.indexOf(d.label) !== -1) {
-                d3.event.preventDefault();
                 return;
             }
             that.mark(this, WHITE);
-            if (that.drawn && that.onchange) {
-                that.onchange();
-            }
-            d3.event.preventDefault();
+            that.changed();
         })
         // Populate row->col->node mapping
         .each(function (d) {
@@ -95,9 +97,9 @@ QRCode.prototype.addRects = function() {
 };
 
 // Changes the status/color of a node, adds a label if provided
-QRCode.prototype.mark = function (node, color, label) {
+QR.QRCode.prototype.mark = function (node, color, label) {
     var d3_node = d3.select(node);
-    var data = d3_node.data()[0];
+    var data = QR.util.getNodeData(node);
     d3_node.style("fill", color);
     data.val = color == WHITE ? 0 : 1;
 
@@ -108,7 +110,7 @@ QRCode.prototype.mark = function (node, color, label) {
 };
 
 // Takes a pattern of bits and draws them at the provided offset
-QRCode.prototype.drawPixels = function (pattern, offset, label) {
+QR.QRCode.prototype.drawPixels = function (pattern, offset, label) {
     for (var row = 0; row < pattern.length; row++) {
         var pattern_line = pattern[row];
         for (var col = 0; col < pattern_line.length; col++) {
@@ -128,7 +130,7 @@ QRCode.prototype.drawPixels = function (pattern, offset, label) {
 };
 
 // Draws the finder patterns in three corners
-QRCode.prototype.drawFinders = function () {
+QR.QRCode.prototype.drawFinders = function () {
     this.drawPixels(FINDER, [-1, -1], "finder");
     this.drawPixels(FINDER, [-1, this.size - FINDER_LEN + 1], "finder");
     this.drawPixels(FINDER, [this.size - FINDER_LEN + 1, -1], "finder");
@@ -136,21 +138,22 @@ QRCode.prototype.drawFinders = function () {
 
 // Draw the horizontal and vertical timing markers
 // These are placed between the inner corners of finder patterns, with every other node being set
-QRCode.prototype.drawTiming = function () {
+QR.QRCode.prototype.drawTiming = function () {
     // Draw horizontal timing pattern
     for (var i=0; i < this.size; i++) {
         var node = this.offset_map[6][i];
-        var node_data = d3.select(node).data()[0];
+        var node_data = QR.util.getNodeData(node);
         if (node_data.label) {
             continue;
         }
         var color = i % 2 ? WHITE : BLACK;
         this.mark(node, color, "timing");
     }
+
     // Vertical timing pattern
     for (var j=0; j < this.size; j++) {
         var node = this.offset_map[j][6];
-        var node_data = d3.select(node).data()[0];
+        var node_data = QR.util.getNodeData(node);
         if (node_data.label) {
             continue;
         }
@@ -160,7 +163,7 @@ QRCode.prototype.drawTiming = function () {
 };
 
 // "Every QR code must have a dark pixel, also known as a dark module, at the coordinates (8, 4*version + 9)."
-QRCode.prototype.drawDark = function () {
+QR.QRCode.prototype.drawDark = function () {
     var node = this.offset_map[4 * this.version_num + 9][8];
     this.mark(node, BLACK, "dark");
 };
@@ -170,12 +173,12 @@ QRCode.prototype.drawDark = function () {
 // Draw an alignment pattern at any offset where the the row and column numbers are both found in the list
 // For [10,20] this would be (10, 10), (10, 20), (20, 10), (20, 20)
 // Don't draw a pattern if the node is already labeled
-QRCode.prototype.drawAlignments = function () {
+QR.QRCode.prototype.drawAlignments = function () {
     var alignments = this.version.alignments;
     for (var i = 0; i < alignments.length; i++) {
         for (var j = 0; j < alignments.length; j++) {
             var node = this.offset_map[alignments[i]][alignments[j]];
-            var node_data = d3.select(node).data()[0];
+            var node_data = QR.util.getNodeData(node);
             if (node_data.label) {
                 continue;
             }
@@ -186,7 +189,7 @@ QRCode.prototype.drawAlignments = function () {
 
 // Applies a mask function to the mutable nodes
 // Every row/col coordinate will be passed to the function argument, invert any node with a truthy response
-QRCode.prototype.applyMask = function (mask) {
+QR.QRCode.prototype.applyMask = function (mask) {
     var that = this;
     this.svg.selectAll("rect").each(function (d) {
         if (mask(d.row, d.col)) {
@@ -200,7 +203,7 @@ QRCode.prototype.applyMask = function (mask) {
 };
 
 // Picks out the format information nodes, doesn't account for version blocks for qr versions higher than 7
-QRCode.prototype.drawFormatInfo = function () {
+QR.QRCode.prototype.drawFormatInfo = function () {
     var that = this;
     this.svg.selectAll("rect").each(function (d) {
         if ((d.row == 8) && (d.col == 0)) { d.format_cell = 14; }
@@ -241,4 +244,10 @@ QRCode.prototype.drawFormatInfo = function () {
             that.mark(this, WHITE, "format");
         }
     });
+};
+
+QR.util = {};
+
+QR.util.getNodeData = function(node) {
+    return d3.select(node).data()[0];
 };

@@ -100,7 +100,7 @@ function AppViewModel() {
     this.qr = ko.computed(function () {
         var svg = d3.select("svg");
         svg.selectAll("*").remove();
-        var qr = new QRCode(svg, +this.qr_version(), this.ec_level(), function () {
+        var qr = new QR.QRCode(svg, +this.qr_version(), this.ec_level(), function () {
             that.qr_sorter(new QRDataSorter(that.qr()));
         });
 
