@@ -78,21 +78,13 @@ QR.QRCode.prototype.addRects = function() {
             if (IGNORE_LABELS.indexOf(d.label) !== -1) {
                 return;
             }
-            that.mark(this, BLACK);
-            that.changed();
-        })
-        // Right click to turn node off
-        .on("contextmenu", function (d) {
-            d3.event.preventDefault();
-            if (IGNORE_LABELS.indexOf(d.label) !== -1) {
-                return;
-            }
-            that.mark(this, WHITE);
+            var color = d.val ? WHITE : BLACK;
+            that.mark(this, color);
             that.changed();
         })
         // Populate row->col->node mapping
         .each(function (d) {
-            that.offset_map[d.row][d.col] = this;
+            that.offset_map[d.col][d.row] = this;
         });
 };
 
@@ -117,7 +109,7 @@ QR.QRCode.prototype.drawPixels = function (pattern, offset, label) {
             var val = pattern_line[col];
             var node;
             try {
-                node = this.offset_map[row + offset[0]][col + offset[1]];
+                node = this.offset_map[col + offset[1]][row + offset[0]];
             }
             catch (e) {}
             if (node === undefined) {
@@ -139,32 +131,25 @@ QR.QRCode.prototype.drawFinders = function () {
 // Draw the horizontal and vertical timing markers
 // These are placed between the inner corners of finder patterns, with every other node being set
 QR.QRCode.prototype.drawTiming = function () {
-    // Draw horizontal timing pattern
     for (var i=0; i < this.size; i++) {
-        var node = this.offset_map[6][i];
-        var node_data = QR.util.getNodeData(node);
-        if (node_data.label) {
-            continue;
-        }
         var color = i % 2 ? WHITE : BLACK;
-        this.mark(node, color, "timing");
-    }
 
-    // Vertical timing pattern
-    for (var j=0; j < this.size; j++) {
-        var node = this.offset_map[j][6];
-        var node_data = QR.util.getNodeData(node);
-        if (node_data.label) {
-            continue;
-        }
-        var color = j % 2 ? WHITE : BLACK;
-        this.mark(node, color, "timing");
+        var nodes = [
+            this.offset_map[6][i],
+            this.offset_map[i][6]
+        ];
+
+        nodes.forEach(function (node) {
+            if (!QR.util.getNodeData(node).label) {
+                this.mark(node, color, "timing");
+            }
+        }, this);
     }
 };
 
 // "Every QR code must have a dark pixel, also known as a dark module, at the coordinates (8, 4*version + 9)."
 QR.QRCode.prototype.drawDark = function () {
-    var node = this.offset_map[4 * this.version_num + 9][8];
+    var node = this.offset_map[8][4 * this.version_num + 9];
     this.mark(node, BLACK, "dark");
 };
 
@@ -174,17 +159,16 @@ QR.QRCode.prototype.drawDark = function () {
 // For [10,20] this would be (10, 10), (10, 20), (20, 10), (20, 20)
 // Don't draw a pattern if the node is already labeled
 QR.QRCode.prototype.drawAlignments = function () {
-    var alignments = this.version.alignments;
-    for (var i = 0; i < alignments.length; i++) {
-        for (var j = 0; j < alignments.length; j++) {
-            var node = this.offset_map[alignments[i]][alignments[j]];
+    this.version.alignments.forEach(function (row_align) {
+        this.version.alignments.forEach(function (col_align) { 
+            var node = this.offset_map[col_align][row_align];
             var node_data = QR.util.getNodeData(node);
             if (node_data.label) {
-                continue;
+                return;
             }
             this.drawPixels(ALIGNMENT, [node_data.row - 2, node_data.col - 2], "alignment");
-        }
-    }
+        }, this);
+    }, this);
 };
 
 // Applies a mask function to the mutable nodes
