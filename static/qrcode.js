@@ -77,7 +77,7 @@ QR.QRCode.prototype.addRects = function() {
         })
         // Populate row->col->node mapping
         .each(function (d) {
-            that.offset_map[d.row][d.col] = this;
+            that.offset_map[d.col][d.row] = this;
         });
 };
 
@@ -96,19 +96,17 @@ QR.QRCode.prototype.mark = function (node, color, label) {
 
 // Takes a pattern of bits and draws them at the provided offset
 QR.QRCode.prototype.drawPixels = function (pattern, offset, label) {
-    for (var row = 0; row < pattern.length; row++) {
-        var pattern_line = pattern[row];
-        for (var col = 0; col < pattern_line.length; col++) {
-            var val = pattern_line[col];
+    for (var col = 0; col < pattern[0].length; col++) {
+        for (var row = 0; row < pattern.length; row++) {
             var node;
             try {
-                node = this.offset_map[row + offset[0]][col + offset[1]];
+                node = this.offset_map[col + offset[1]][row + offset[0]];
             }
             catch (e) {}
             if (node === undefined) {
                 continue;
             }
-            var fill_color = val ? BLACK : WHITE;
+            var fill_color = pattern[col][row] ? BLACK : WHITE;
             this.mark(node, fill_color, label);
         }
     }
@@ -142,7 +140,7 @@ QR.QRCode.prototype.drawTiming = function () {
 
 // "Every QR code must have a dark pixel, also known as a dark module, at the coordinates (8, 4*version + 9)."
 QR.QRCode.prototype.drawDark = function () {
-    var node = this.offset_map[4 * this.version_num + 9][8];
+    var node = this.offset_map[8][4 * this.version_num + 9];
     this.mark(node, BLACK, "dark");
 };
 
