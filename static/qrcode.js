@@ -26,20 +26,14 @@ QR.QRCode.prototype.setup = function () {
     // Create array for row->col->node lookups
     this.offset_map = new [].arrayFiller(this.size);
 
-    this.calcSize();
+    this.block_size = Math.floor(max_width / this.size);
+
     this.addRects();
     this.drawFinders();
     this.drawAlignments();
     this.drawTiming();
     this.drawDark();
     this.drawFormatInfo();
-};
-
-QR.QRCode.prototype.calcSize = function () {
-    this.spacing = 1;
-    var non_spacing_pixels = max_width - (this.spacing * (this.size + 1));
-    this.block_size = Math.floor(non_spacing_pixels / this.size)
-    this.block_spacing = this.block_size + this.spacing;
 };
 
 // Creates the base data for d3, makes (size * size) elements with defined coordinates
@@ -65,8 +59,8 @@ QR.QRCode.prototype.addRects = function() {
         .data(this.getData()).enter()
         .append("rect")
         .attr({
-            "x": function(d) { return d.col * that.block_spacing + 1; },
-            "y": function(d) { return d.row * that.block_spacing + 1; },
+            "x": function(d) { return d.col * that.block_size + 1; },
+            "y": function(d) { return d.row * that.block_size + 1; },
             "width": this.block_size,
             "height": this.block_size,
         })
